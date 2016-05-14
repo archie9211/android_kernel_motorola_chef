@@ -56,6 +56,132 @@ static struct wakeup_source *ws;
 static struct rtc_timer		rtctimer;
 static struct rtc_device	*rtcdev;
 static DEFINE_SPINLOCK(rtcdev_lock);
+static struct mutex power_on_alarm_lock;
+static struct alarm init_alarm;
+
+/**
+ * power_on_alarm_init - Init power on alarm value
+ *
+ * Read rtc alarm value after device booting up and add this alarm
+ * into alarm queue.
+ */
+void power_on_alarm_init(void)
+{
+	struct rtc_wkalrm rtc_alarm;
+	struct rtc_time rt;
+	unsigned long alarm_time;
+	struct rtc_device *rtc;
+	ktime_t alarm_ktime;
+
+	rtc = alarmtimer_get_rtcdev();
+
+	if (!rtc)
+		return;
+
+	rtc_read_alarm(rtc, &rtc_alarm);
+	rt = rtc_alarm.time;
+
+	rtc_tm_to_time(&rt, &alarm_time);
+
+	if (alarm_time) {
+		alarm_ktime = ktime_set(alarm_time, 0);
+		alarm_init(&init_alarm, ALARM_POWEROFF_REALTIME, NULL);
+		alarm_start(&init_alarm, alarm_ktime);
+	}
+}
+
+/**
+ * power_on_alarm_empty - return if the Power ON Alarm queue has a node
+ *
+ */
+int power_on_alarm_empty(void)
+{
+	unsigned long flags;
+	struct timerqueue_node *next;
+	struct alarm_base *base = &alarm_bases[ALARM_POWEROFF_REALTIME];
+
+	if (!base)
+		return -EINVAL;
+
+	spin_lock_irqsave(&base->lock, flags);
+	next = timerqueue_getnext(&base->timerqueue);
+	spin_unlock_irqrestore(&base->lock, flags);
+
+	if (next)
+		return 0;
+
+	/* Power ON Alarm Queue Empty */
+	return 1;
+}
+
+/**
+ * set_power_on_alarm - set power on alarm value into rtc register
+ *
+ * Get the soonest power off alarm timer and set the alarm value into rtc
+ * register.
+ */
+void set_power_on_alarm(void)
+{
+	int rc;
+	struct timespec wall_time, alarm_ts;
+	long alarm_secs = 0l;
+	long rtc_secs, alarm_time, alarm_delta;
+	struct rtc_time rtc_time;
+	struct rtc_wkalrm alarm;
+	struct rtc_device *rtc;
+	struct timerqueue_node *next;
+	unsigned long flags;
+	struct alarm_base *base = &alarm_bases[ALARM_POWEROFF_REALTIME];
+
+	rc = mutex_lock_interruptible(&power_on_alarm_lock);
+	if (rc != 0)
+		return;
+
+	spin_lock_irqsave(&base->lock, flags);
+	next = timerqueue_getnext(&base->timerqueue);
+	spin_unlock_irqrestore(&base->lock, flags);
+
+	if (next) {
+		alarm_ts = ktime_to_timespec(next->expires);
+		alarm_secs = alarm_ts.tv_sec;
+	}
+
+	if (!alarm_secs)
+		goto disable_alarm;
+
+	getnstimeofday(&wall_time);
+
+	/*
+	 * alarm_secs have to be bigger than "wall_time +1".
+	 * It is to make sure that alarm time will be always
+	 * bigger than wall time.
+	*/
+	if (alarm_secs <= wall_time.tv_sec + 1)
+		goto disable_alarm;
+
+	rtc = alarmtimer_get_rtcdev();
+	if (!rtc)
+		goto exit;
+
+	rtc_read_time(rtc, &rtc_time);
+	rtc_tm_to_time(&rtc_time, &rtc_secs);
+	alarm_delta = wall_time.tv_sec - rtc_secs;
+	alarm_time = alarm_secs - alarm_delta;
+
+	rtc_time_to_tm(alarm_time, &alarm.time);
+	alarm.enabled = 1;
+	rc = rtc_set_alarm(rtcdev, &alarm);
+	if (rc)
+		goto disable_alarm;
+
+	mutex_unlock(&power_on_alarm_lock);
+	return;
+
+disable_alarm:
+	rtc_alarm_irq_enable(rtcdev, 0);
+exit:
+	mutex_unlock(&power_on_alarm_lock);
+}
 
 static void alarmtimer_triggered_func(void *p)
 {
