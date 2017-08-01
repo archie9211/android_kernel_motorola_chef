@@ -82,7 +82,6 @@ obj-$(CONFIG_MODS_MODBUS_SWITCH) += modbus_switch.o
 obj-$(CONFIG_MOTOMODS) += motomods/
 obj-$(CONFIG_FORCE_FAST_CHARGE) += fastchg.o
 
-
 # TODO: remove me b/62058353
 subdir-ccflags-y += \
 	-Wno-ignored-attributes \
