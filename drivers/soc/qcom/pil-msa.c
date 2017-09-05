@@ -685,7 +685,7 @@ err_invalid_fw:
 }
 
 static int pil_msa_auth_modem_mdt(struct pil_desc *pil, const u8 *metadata,
-		size_t size, phys_addr_t phy_addr, size_t phy_sz)
+				  size_t size, phys_addr_t phy_addr, size_t phy_sz)
 {
 	struct modem_data *drv = dev_get_drvdata(pil->dev);
 	void *mdata_virt;
@@ -716,7 +716,7 @@ static int pil_msa_auth_modem_mdt(struct pil_desc *pil, const u8 *metadata,
 
 	if (pil->subsys_vmid > 0) {
 		/**
-		  * In case of modem ssr,we need to assign memory back to linux.
+		  * In case of modem ssr, we need to assign memory back to linux.
 		  * This is not true after cold boot since linux already owns
 		  * it. Also for secure boot devices, modem memory has to be
 		  * released after MBA is booted
