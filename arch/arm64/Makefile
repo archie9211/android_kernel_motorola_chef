@@ -29,7 +29,11 @@ ifeq ($(CONFIG_ARM64_LSE_ATOMICS), y)
 $(warning LSE atomics not supported by binutils)
   endif
 endif
-KBUILD_CFLAGS	+= $(call cc-option,-march=armv8-a+crypto+crc,) $(call cc-option,-mcpu=cortex-a73+crypto+crc,) $(call cc-option,-mcpu=cortex-a53+crypto+crc,)
+
+KBUILD_CFLAGS	+= $(call cc-option,-march=armv8-a+crypto+crc,)
+KBUILD_CFLAGS	+= $(call cc-option,-mcpu=kryo,)
+KBUILD_CFLAGS	+= $(call cc-option,-mtune=cortex-a73.cortex-a53,)
+
 ifeq ($(cc-name),clang)
 KBUILD_CFLAGS	+= $(call clang-ifversion, -ge, 0600, -mgeneral-regs-only, -mno-implicit-float)
 else
