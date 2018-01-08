@@ -808,7 +808,10 @@ static int rradc_check_status_ready_with_retry(struct rradc_chip *chip,
 			msleep(FG_RR_CONV_CONT_CBK_TIME_MIN_MS);
 		else
 			msleep(FG_RR_CONV_CONTINUOUS_TIME_MIN_MS);
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1222b89dda43 (Update logic to monitor health of RRADC peripheral)
 		retry_cnt++;
 		rc = rradc_read(chip, status, buf, 1);
 		if (rc < 0) {
@@ -1149,6 +1152,7 @@ static void psy_notify_work(struct work_struct *work)
 				if (rradc_is_bms_psy_available(chip)) {
 					rc = power_supply_set_property
 						(chip->bms_psy,
+<<<<<<< HEAD
 						POWER_SUPPLY_PROP_FG_RESET_CLOCK,
 						&pval);
 					if (rc < 0)
@@ -1167,6 +1171,20 @@ static void psy_notify_work(struct work_struct *work)
 	} else {
 		pr_err("Error obtaining battery power supply");
 	}
+=======
+					POWER_SUPPLY_PROP_FG_RESET_CLOCK,
+						&pval);
+					if (rc < 0)
+						pr_err("reset FG fail rc=%d\n",
+							 rc);
+				} else
+					pr_err("Error obtaining bms power supply");
+			}
+		}
+	} else
+		pr_err("Error obtaining battery power supply");
+
+>>>>>>> 1222b89dda43 (Update logic to monitor health of RRADC peripheral)
 	chip->conv_cbk = false;
 	pm_relax(chip->dev);
 }
