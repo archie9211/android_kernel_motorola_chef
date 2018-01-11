@@ -18,6 +18,12 @@ msm8996-mtp-overlay.dtbo-base :=  msm8996pro-v1.1-pmi8996.dtb \
 msm8996-cdp-overlay.dtbo-base :=  msm8996-v3-pmi8994.dtb \
 				 msm8996pro-pmi8994-pm8004.dtb
 
+ifeq ($(CONFIG_CHEF_DTB),y)
+dtb-$(CONFIG_ARCH_SDM636) += sdm636-chef-evt.dtb
+endif
+
+dtb-$(CONFIG_ARCH_SDM660) += sdm660-paytonpro-p0a.dtb
+
 apq8096pro-v1.1-auto-adp-overlay.dtbo-base := apq8096pro-v1.1-auto.dtb
 apq8096pro-v1.1-auto-adp-lite-overlay.dtbo-base := apq8096pro-v1.1-auto.dtb
 msm8996pro-auto-adp-overlay.dtbo-base := msm8996pro-auto.dtb
