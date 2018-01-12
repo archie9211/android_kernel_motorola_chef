@@ -20,8 +20,8 @@
 
 / {
 	model = "beckham";
-	compatible = "qcom,sdm636-beckham", "qcom,sdm636-moto",
-			"qcom,sdm636";
+	compatible = "qcom,sdm660-beckham", "qcom,sdm660-moto",
+			"qcom,sdm660";
 	aliases {
 		/delete-property/ i2c3;
 		uart1 = &blsp1_uart1_hs;
@@ -87,18 +87,18 @@
 		compatible = "ti,drv2624";
 		reg = <0x5A>;
 		/* voltage = *_voltage x 22 mV */
-		/* 1.8V for now */
+		/* 2V for now */
 		ti,rated_voltage = /bits/ 8 <0x49>;
 		ti,overdrive_voltage = /bits/ 8 <0x9a>;
 		ti,rated_voltage_reduced = /bits/ 8 <0x25>;
 		ti,overdrive_voltage_reduced = /bits/ 8 <0x9a>;
 		/* LRA period = lra_freq x 24.39 us */
-		/* 205 Hz for now */
+		/* 175 Hz for now */
 		ti,lra_freq = /bits/ 8 <0xCD>;
 		ti,lra_drive;
 		ti,auto_cal;
 		ti,auto_cal_time = /bits/ 8 <0x02>;
-		/* sample time 300us  */
+		/* sample time 200us  */
 		ti,sample_time = /bits/ 8 <0x1D>;
 		ti,drive_time = /bits/ 8 <0x10>;
 		ti,nrst-gpio = <&pcal_pin 10 0>;
@@ -116,7 +116,6 @@
 		analogix,irq-gpio = <&tlmm 45 0x00>;
 		analogix,p-dwn-gpio = <&pcal_pin_2 6 0>;//<&tlmm 55 0x0>;
 		analogix,cbl-det-gpio = <&tlmm 44 0x0>;
-		analogix,vdd-1p0-enable-gpio = <&pcal_pin_2 0 0x0>;
 		analogix,i2c-pull-up = <1>;
 		vdd-1p0-supply = <&pm660_s5>;
 		avdd-3p3-supply = <&pm660_l18>;
@@ -214,6 +213,7 @@
 			qcom,scaling-factor = <1000>;
 		};
 	};
+
 
 	sys_temp_support {
 		compatible = "mmi,sys-temp";
