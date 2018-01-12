@@ -2,6 +2,7 @@
  *  linux/kernel/printk.c
  *
  *  Copyright (C) 1991, 1992  Linus Torvalds
+ *  Copyright (C) 2017 XiaoMi, Inc.
  *
  * Modified to make sys_syslog() more flexible: added commands to
  * return the last 4k of kernel messages, regardless of whether
@@ -2142,6 +2143,12 @@ void resume_console(void)
 }
 
 #ifdef CONFIG_CONSOLE_FLUSH_ON_HOTPLUG
+
+void emergency_unlock_console(void)
+{
+	console_suspended = 0;
+}
+EXPORT_SYMBOL(emergency_unlock_console);
 
 /**
  * console_cpu_notify - print deferred console messages after CPU hotplug
