@@ -1,13 +1,36 @@
-ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
-dtbo-$(CONFIG_ARCH_MSM8996) += \
-	msm8996-mtp-overlay.dtbo \
-	msm8996-cdp-overlay.dtbo \
-	apq8096pro-v1.1-auto-adp-overlay.dtbo \
-	apq8096pro-v1.1-auto-adp-lite-overlay.dtbo \
-	msm8996pro-auto-adp-overlay.dtbo \
-	msm8996pro-auto-adp-lite-overlay.dtbo \
-	apq8096pro-auto-cdp-overlay.dtbo \
-	msm8996pro-v1.1-auto-cdp-overlay.dtbo
+# Only include Motorola DTBs
+ifeq ($(CONFIG_MMI_DEVICE_DTBS),y)
+# Add 1k of padding to the DTBs to allow for environment variables
+# to be runtime added by the bootloader (i.e. /chosen properties)
+DTC_FLAGS := -p 1024
+
+# Motorola Device Trees
+dtb-$(CONFIG_ARCH_MSM8998) += msm8998-saratoga-p1.dtb \
+	msm8998-saratoga-p1a.dtb \
+	msm8998-nash-evt1-v2.dtb \
+	msm8998-nash-evt1-v1.dtb \
+	msm8998-nash-dvt1.dtb \
+	msm8998-nash-dvt1b.dtb \
+	msm8998-nash-dvt2.dtb \
+	msm8998-nash-dvt2b.dtb
+
+dtb-$(CONFIG_ARCH_SDM660) += sdm660-payton-p0a.dtb \
+	sdm660-beckham-evt1.dtb \
+	sdm660-beckham-evt2.dtb \
+	sdm636-beckham-evt1.dtb \
+	sdm636-beckham-dvt1a.dtb \
+	sdm636-beckham-dvt1b.dtb \
+	sdm636-beckham-dvt2a.dtb
+
+dtb-$(CONFIG_ARCH_SDM630) += sdm630-payton-p0a.dtb \
+	sdm630-payton-p1a.dtb \
+	sdm630-payton-p2a.dtb \
+	sdm630-payton-p2b.dtb \
+	sdm630-evert-evt1.dtb \
+	sdm630-evert-dvt1a.dtb \
+	sdm630-evert-dvt1b.dtb \
+	sdm630-evert-dvt2.dtb \
+	sdm630-evert-pvt1.dtb
 
 msm8996-mtp-overlay.dtbo-base :=  msm8996pro-v1.1-pmi8996.dtb \
 				msm8996-v3-pmi8996.dtb \
