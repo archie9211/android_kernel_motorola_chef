@@ -1861,6 +1861,184 @@ err_mbhc_cal:
 }
 EXPORT_SYMBOL(msm_audrx_init);
 
+
+static struct snd_soc_dapm_route cs47l35_audio_paths[] = {
+	{"Slim1 Playback", NULL, "MCLK"},
+	{"Slim1 Capture", NULL, "MCLK"},
+	{"Slim2 Playback", NULL, "MCLK"},
+	{"Slim2 Capture", NULL, "MCLK"},
+
+	{"AIF1 Playback", NULL, "AMP Capture"},
+#ifdef CONFIG_MODS_USE_EXTCODEC_MI2S
+	{"AIF2 Playback", NULL, "Mods Dai Capture"},
+	{"Mods Dai Playback", NULL, "AIF2 Capture"},
+#endif
+	{"AMP Playback", NULL, "OPCLK"},
+	{"AMP Capture", NULL, "OPCLK"},
+};
+
+static const struct snd_soc_dapm_widget msm_madera_dapm_widgets[] = {
+	SND_SOC_DAPM_SUPPLY_S("MCLK", -1,  SND_SOC_NOPM, 0, 0,
+		msm_ext_mclk_event, SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
+};
+
+int msm_madera_init(struct snd_soc_pcm_runtime *rtd)
+{
+	int ret, i;
+	struct snd_soc_codec *codec = rtd->codec;
+	struct snd_soc_dapm_context *dapm = snd_soc_codec_get_dapm(codec);
+
+	ret = snd_soc_codec_set_pll(codec, MADERA_FLL1_REFCLK,
+			MADERA_FLL_SRC_MCLK2,
+			32768, CS47L35_SYSCLK_RATE);
+	if (ret != 0) {
+		dev_err(codec->dev, "Failed to set FLL1REFCLK %d\n", ret);
+		return ret;
+	}
+
+	ret = snd_soc_codec_set_sysclk(codec, MADERA_CLK_SYSCLK,
+			MADERA_CLK_SRC_FLL1, CS47L35_SYSCLK_RATE,
+			SND_SOC_CLOCK_IN);
+	if (ret != 0) {
+		dev_err(codec->dev, "Failed to set SYSCLK %d\n", ret);
+		return ret;
+	}
+
+	ret = snd_soc_codec_set_sysclk(codec, MADERA_CLK_DSPCLK,
+			MADERA_CLK_SRC_FLL1, CS47L35_DSPCLK_RATE,
+			SND_SOC_CLOCK_IN);
+	if (ret != 0) {
+		dev_err(codec->dev, "Failed to set DSPCLK %d\n", ret);
+		return ret;
+	}
+
+	ret = snd_soc_codec_set_sysclk(codec, MADERA_CLK_OPCLK,
+			0, CS35L35_MCLK_RATE,
+			SND_SOC_CLOCK_OUT);
+	if (ret != 0) {
+		dev_err(codec->dev, "Failed to set OPCLK %d\n", ret);
+		return ret;
+	}
+
+	ret = snd_soc_add_codec_controls(codec, msm_snd_controls,
+					 ARRAY_SIZE(msm_snd_controls));
+	if (ret < 0) {
+		pr_err("%s: add_codec_controls failed: %d\n",
+			__func__, ret);
+		return ret;
+	}
+
+	ret = snd_soc_add_codec_controls(codec, msm_common_snd_controls,
+					 msm_common_snd_controls_size());
+	if (ret < 0) {
+		pr_err("%s: add_common_snd_controls failed: %d\n",
+			__func__, ret);
+		return ret;
+	}
+
+	ret = snd_soc_dapm_new_controls(dapm, msm_madera_dapm_widgets,
+			ARRAY_SIZE(msm_madera_dapm_widgets));
+	if (ret != 0) {
+		dev_err(codec->dev, "Failed to add dapm widgets %d\n", ret);
+		return ret;
+	}
+
+	ret = snd_soc_dapm_add_routes(dapm, cs47l35_audio_paths,
+			ARRAY_SIZE(cs47l35_audio_paths));
+	if (ret != 0) {
+		dev_err(codec->dev, "Failed to add audio routes %d\n", ret);
+		return ret;
+	}
+#ifdef CONFIG_SND_SOC_CS47L90
+	/* Toggle PDM_CLK GPIO */
+	for (i = 0; i < 5; i++) {
+		snd_soc_write(codec, MADERA_GPIO37_CTRL_1, 0xA001);
+		usleep_range(1000, 1100);
+		snd_soc_write(codec, MADERA_GPIO37_CTRL_1, 0x2001);
+		usleep_range(1000, 1100);
+	}
+#else
+	for (i = 0; i < 5; i++) {
+		snd_soc_write(codec, MADERA_GPIO6_CTRL_1, 0xA001);
+		usleep_range(1000, 1100);
+		snd_soc_write(codec, MADERA_GPIO6_CTRL_1, 0x2001);
+		usleep_range(1000, 1100);
+	}
+#endif
+
+	/* Ensures that GPIO3 is set to an output clock. */
+#ifdef SND_SOC_CS47L35
+	snd_soc_write(codec, 0x1704, 0);
+	snd_soc_write(codec, 0x1705, 0);
+	snd_soc_write(codec, 0x1704, 0x40);
+#endif
+
+	/* Set Slimbus FLL input clock to 1.536MHz */
+	snd_soc_write(codec, MADERA_SLIMBUS_FRAMER_REF_GEAR, 0x6);
+
+	snd_soc_dapm_ignore_suspend(dapm, "MICBIAS1");
+	snd_soc_dapm_ignore_suspend(dapm, "MICBIAS2");
+	snd_soc_dapm_ignore_suspend(dapm, "MICSUPP");
+	snd_soc_dapm_ignore_suspend(dapm, "MICBIAS1A");
+	snd_soc_dapm_ignore_suspend(dapm, "MICBIAS1B");
+	snd_soc_dapm_ignore_suspend(dapm, "MICBIAS2A");
+	snd_soc_dapm_ignore_suspend(dapm, "MICBIAS2B");
+	snd_soc_dapm_ignore_suspend(dapm, "IN1AL");
+	snd_soc_dapm_ignore_suspend(dapm, "IN1AR");
+	snd_soc_dapm_ignore_suspend(dapm, "IN1BL");
+	snd_soc_dapm_ignore_suspend(dapm, "IN1BR");
+	snd_soc_dapm_ignore_suspend(dapm, "IN2L");
+	snd_soc_dapm_ignore_suspend(dapm, "IN2R");
+	snd_soc_dapm_ignore_suspend(dapm, "AIF1TX1");
+	snd_soc_dapm_ignore_suspend(dapm, "AIF1TX2");
+	snd_soc_dapm_ignore_suspend(dapm, "AIF1RX1");
+	snd_soc_dapm_ignore_suspend(dapm, "AIF1RX2");
+#ifdef CONFIG_SND_SOC_CS47L90
+	snd_soc_dapm_ignore_suspend(dapm, "HPOUT1L");
+	snd_soc_dapm_ignore_suspend(dapm, "HPOUT1R");
+	snd_soc_dapm_ignore_suspend(dapm, "HPOUT2L");
+	snd_soc_dapm_ignore_suspend(dapm, "HPOUT2R");
+#else
+	snd_soc_dapm_ignore_suspend(dapm, "HPOUTL");
+	snd_soc_dapm_ignore_suspend(dapm, "HPOUTR");
+#endif
+	snd_soc_dapm_ignore_suspend(dapm, "SPKOUTN");
+	snd_soc_dapm_ignore_suspend(dapm, "SPKOUTP");
+	snd_soc_dapm_ignore_suspend(dapm, "SPKDATL");
+	snd_soc_dapm_ignore_suspend(dapm, "SPKDATR");
+	snd_soc_dapm_ignore_suspend(dapm, "DSP2 Virtual Output");
+	snd_soc_dapm_ignore_suspend(dapm, "DSP3 Virtual Output");
+	snd_soc_dapm_ignore_suspend(dapm, "DSP Virtual Input");
+	snd_soc_dapm_ignore_suspend(dapm, "DSP2 Trigger Out");
+	snd_soc_dapm_ignore_suspend(dapm, "DSP3 Trigger Out");
+
+	snd_soc_dapm_ignore_suspend(dapm, "Slim1 Playback");
+	snd_soc_dapm_ignore_suspend(dapm, "Slim1 Capture");
+	snd_soc_dapm_ignore_suspend(dapm, "Slim2 Playback");
+	snd_soc_dapm_ignore_suspend(dapm, "Slim2 Capture");
+
+	snd_soc_dapm_sync(dapm);
+
+	ret = msm_adsp_power_up_config(codec);
+	if (ret)
+		pr_err("%s: Failed to set AFE config %d\n", __func__, ret);
+
+#ifdef CONFIG_SND_SOC_OPALUM
+	ret = ospl2xx_init(rtd);
+	if (ret != 0)
+		pr_err("%s Cannot set Opalum controls %d\n", __func__, ret);
+#endif
+	snd_soc_dapm_force_enable_pin(dapm, "SYSCLK");
+	snd_soc_dapm_sync(dapm);
+#if IS_ENABLED(CONFIG_SND_SOC_AOV_TRIGGER)
+	aov_trigger_register_notifier(codec);
+#endif
+	codec_reg_done = true;
+	return 0;
+}
+EXPORT_SYMBOL(msm_madera_init);
+
+
 /**
  * msm_ext_register_audio_notifier - register SSR notifier.
  */
