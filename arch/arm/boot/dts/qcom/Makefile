@@ -16,24 +16,30 @@ dtb-$(CONFIG_ARCH_MSM8998) += msm8998-saratoga-p1.dtb \
 	msm8998-loki-evt1.dtb \
 	msm8998-messi-evt1.dtb
 
-dtb-$(CONFIG_ARCH_SDM660) += sdm660-payton-p0a.dtb \
-	sdm660-beckham-evt1.dtb \
+ifeq ($(CONFIG_BECKHAM_DTB),y)
+dtb-$(CONFIG_ARCH_SDM660) += sdm660-beckham-evt1.dtb \
 	sdm660-beckham-evt2.dtb \
 	sdm636-beckham-evt1.dtb \
 	sdm636-beckham-dvt1a.dtb \
 	sdm636-beckham-dvt1b.dtb \
 	sdm636-beckham-dvt2a.dtb \
 	sdm636-beckham-dvt2b.dtb
+endif
 
+ifeq ($(CONFIG_PAYTON_DTB),y)
 dtb-$(CONFIG_ARCH_SDM630) += sdm630-payton-p0a.dtb \
 	sdm630-payton-p1a.dtb \
 	sdm630-payton-p2a.dtb \
-	sdm630-payton-p2b.dtb \
-	sdm630-evert-evt1.dtb \
+	sdm630-payton-p2b.dtb
+endif
+
+ifeq ($(CONFIG_EVERT_DTB),y)
+dtb-$(CONFIG_ARCH_SDM630) += sdm630-evert-evt1.dtb \
 	sdm630-evert-dvt1a.dtb \
 	sdm630-evert-dvt1b.dtb \
 	sdm630-evert-dvt2.dtb \
 	sdm630-evert-pvt1.dtb
+endif
 
 msm8996-mtp-overlay.dtbo-base :=  msm8996pro-v1.1-pmi8996.dtb \
 				msm8996-v3-pmi8996.dtb \
@@ -52,7 +58,9 @@ ifeq ($(CONFIG_FLAY_DTB),y)
 dtb-$(CONFIG_ARCH_SDM636) += sdm636-flay-evt.dtb
 endif
 
+ifeq ($(CONFIG_PAYTON_DTB),y)
 dtb-$(CONFIG_ARCH_SDM660) += sdm660-paytonpro-p0a.dtb
+endif
 
 apq8096pro-v1.1-auto-adp-overlay.dtbo-base := apq8096pro-v1.1-auto.dtb
 apq8096pro-v1.1-auto-adp-lite-overlay.dtbo-base := apq8096pro-v1.1-auto.dtb
