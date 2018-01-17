@@ -844,4 +844,20 @@ config INPUT_STMVL53L0
 	 To compile this driver as a module, choose M here: the
 	 module will be called stmvl53l0.
 
+config SENSORS_FPC_1020
+	tristate "fpc fingerprint sensor"
+	default n
+	help
+	  Say Y here if you wish to include support for finger print sensor.
+	  If unsure, say N.
+config INPUT_EGISTEC_FPS
+	tristate "Egistec FPS fingerprint sensor"
+	default n
+	help
+	 Say Y here if you wish to include support for EGIS finger print sensor.
+	 If unsure, say N.
+config STMVL53L1
+	tristate "STMVL53L1 support"
+	help
+	  Say Y here if you wish to include support for laser sensor driver.
 endif
