@@ -29,6 +29,12 @@
 #include <sound/adsp_err.h>
 #include <linux/qdsp6v2/apr_tal.h>
 #include <sound/q6core.h>
+#ifdef CONFIG_SND_SOC_OPALUM
+#include <sound/ospl2xx.h>
+#endif
+#ifdef CONFIG_SND_SOC_TAS2560
+#include <sound/tas2560_algo.h>
+#endif
 
 #define WAKELOCK_TIMEOUT	5000
 enum {
@@ -134,6 +140,28 @@ static atomic_t afe_ports_mad_type[SLIMBUS_PORT_LAST - SLIMBUS_0_RX];
 static unsigned long afe_configured_cmd;
 
 static struct afe_ctl this_afe;
+
+#ifdef CONFIG_SND_SOC_OPALUM
+int32_t (*ospl2xx_callback)(struct apr_client_data *data);
+
+int ospl2xx_afe_set_callback(
+	int32_t (*ospl2xx_callback_func)(struct apr_client_data *data))
+{
+	ospl2xx_callback = ospl2xx_callback_func;
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_SND_SOC_TAS2560
+int32_t (*tas2560_algo_callback)(struct apr_client_data *data);
+
+int tas2560_algo_afe_set_callback(
+	int32_t (*tas2560_algo_callback_func)(struct apr_client_data *data))
+{
+	tas2560_algo_callback = tas2560_algo_callback_func;
+	return 0;
+}
+#endif
 
 #define TIMEOUT_MS 1000
 #define Q6AFE_MAX_VOLUME 0x3FFF
@@ -570,6 +598,25 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 		uint32_t *payload = data->payload;
 		uint32_t param_id;
 		uint32_t param_id_pos = 0;
+#if defined(CONFIG_SND_SOC_TAS2560)
+		int32_t *payload32 = data->payload;
+
+		if ((payload32[1] == AFE_TAS2560_ALGO_MODULE_RX) ||
+		     (payload32[1] == AFE_TAS2560_ALGO_MODULE_TX)) {
+			if (tas2560_algo_callback != NULL)
+				tas2560_algo_callback(data);
+			atomic_set(&this_afe.state, 0);
+		} else {
+#elif defined(CONFIG_SND_SOC_OPALUM)
+		int32_t *payload32 = data->payload;
+
+		if (payload32[1] == AFE_CUSTOM_OPALUM_RX_MODULE ||
+		    payload32[1] == AFE_CUSTOM_OPALUM_TX_MODULE) {
+			if (ospl2xx_callback != NULL)
+				ospl2xx_callback(data);
+			atomic_set(&this_afe.state, 0);
+		} else {
+#endif
 
 		if (!payload || (data->token >= AFE_MAX_PORTS)) {
 			pr_err("%s: Error: size %d payload %pK token %d\n",
@@ -602,6 +649,9 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 						 data->payload_size))
 				return -EINVAL;
 		}
+#if defined(CONFIG_SND_SOC_OPALUM) || defined(CONFIG_SND_SOC_TAS2560)
+		}
+#endif
 		wake_up(&this_afe.wait[data->token]);
 	} else if (data->opcode == AFE_CMDRSP_REQUEST_LPASS_RESOURCES) {
 		uint32_t ret = 0;
@@ -1468,6 +1518,25 @@ done:
 	return ret;
 }
 
+#ifdef CONFIG_SND_SOC_OPALUM
+int ospl2xx_afe_apr_send_pkt(void *data, int index)
+{
+	int ret = 0;
+
+	ret = afe_apr_send_pkt(data, &this_afe.wait[index]);
+	return ret;
+}
+#endif
+
+#ifdef CONFIG_SND_SOC_TAS2560
+int tas2560_algo_afe_apr_send_pkt(void *data, int index)
+{
+	int ret = 0;
+
+	ret = afe_apr_send_pkt(data, &this_afe.wait[index]);
+	return ret;
+}
+#endif
 static int afe_send_cal_block(u16 port_id, struct cal_block_data *cal_block)
 {
 	struct mem_mapping_hdr mem_hdr = {0};
