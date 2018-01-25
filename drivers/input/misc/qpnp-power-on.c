@@ -360,6 +360,88 @@ int qpnp_pon_set_restart_reason(enum pon_restart_reason reason)
 }
 EXPORT_SYMBOL(qpnp_pon_set_restart_reason);
 
+/**
+ * qpnp_pon_store_extra_reset_info - Store extra reset info in PMIC register.
+ *
+ * Returns = 0 if PMIC feature is not available or store restart reason
+ * successfully.
+ * Returns > 0 for errors
+ *
+ * This function is used to store extra reset info in PMIC spare register
+ * which can be preserved during reset.
+ */
+int qpnp_pon_store_extra_reset_info(u16 mask, u16 val)
+{
+	int rc = 0;
+	struct qpnp_pon *pon = sys_reset_dev;
+
+	if (!pon)
+		return 0;
+
+	if (mask & 0xFF) {
+		rc = qpnp_pon_masked_write(pon, QPNP_PON_DVDD_RB_SPARE(pon),
+					   (mask & 0xFF), (val & 0xFF));
+		if (rc) {
+			dev_err(&pon->pdev->dev,
+				"Failed to store extra reset info to 0x%x\n",
+				QPNP_PON_DVDD_RB_SPARE(pon));
+			return rc;
+		}
+	}
+
+	if (mask & 0xFF00) {
+		rc = qpnp_pon_masked_write(pon, QPNP_PON_XVDD_RB_SPARE(pon),
+				((mask >> 8) & 0xFF), ((val >> 8) & 0xFF));
+		if (rc) {
+			dev_err(&pon->pdev->dev,
+				"Failed to store extra reset info to 0x%x\n",
+				QPNP_PON_XVDD_RB_SPARE(pon));
+			return rc;
+		}
+	}
+
+	return rc;
+}
+EXPORT_SYMBOL(qpnp_pon_store_extra_reset_info);
+
+int qpnp_pon_store_shipmode_info(u16 mask, u16 val)
+{
+	int rc = 0;
+	u16 shipmode_info_reg;
+	int value;
+	struct qpnp_pon *pon = shipmode_dev;
+
+	if (!pon)
+		return -ENODEV;
+
+	if (mask & 0xFF) {
+
+		shipmode_info_reg = QPNP_PON_XVDD_RB_SPARE(pon);
+
+		rc = regmap_read(pon->regmap, shipmode_info_reg, &value);
+		if (rc) {
+			dev_err(&pon->pdev->dev,
+				"Unable to check shipmode status, rc(%d)\n",
+				rc);
+		}
+		pr_err("Current shipmode info1 is 0x%x = 0x%x\n",
+		       shipmode_info_reg, value);
+
+		rc = qpnp_pon_masked_write(pon, shipmode_info_reg,
+		    mask & 0xFF, val & 0xFF);
+		if (rc) {
+			pr_err("Failed to store shipmode info to 0x%x\n",
+			    shipmode_info_reg);
+			return rc;
+		}
+		pr_err("Write shipmode info1 to 0x%x with 0x%x\n",
+		       shipmode_info_reg, val);
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL(qpnp_pon_store_shipmode_info);
+
 /*
  * qpnp_pon_check_hard_reset_stored - Checks if the PMIC need to
  * store hard reset reason.
