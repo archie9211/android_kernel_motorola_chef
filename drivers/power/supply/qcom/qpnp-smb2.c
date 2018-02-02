@@ -1786,6 +1786,47 @@ static int smb2_init_hw(struct smb2 *chip)
 		}
 	}
 
+	if (chg->hvdcp_force_5v) {
+		pr_info("hw init hvdcp force to 5v\n");
+		chg->voltage_max_uv = 5000000;
+		rc = smblib_write(chg, HVDCP_PLUSE_COUNT_MAX,
+				HVDCP_FORCE_6V);
+		if (rc < 0) {
+			dev_err(chg->dev,
+				"Couldn't configure hvdcp force 5v, rc=%d\n",
+				rc);
+			return rc;
+		}
+
+		rc = smblib_masked_write(chg, ENG_BUCKBOOST_CfG9,
+				ENG_BUCKBOOST_IPEAK_USB_SELECT,
+				0x5);
+		if (rc < 0) {
+			dev_err(chg->dev,
+				"Couldn't configure ENG_BUCKBOOST_CFG9, rc=%d\n",
+				rc);
+			return rc;
+		}
+	}
+
+	if (chg->mmi.inner_wls_used) {
+		rc = smblib_write(chg, DCIN_ADAPTER_ALLOW_CFG_REG,
+				USBIN_ADAPTER_ALLOW_5V_TO_9V);
+		if (rc < 0) {
+			dev_err(chg->dev,
+				"Couldn't configure dcin range, rc=%d\n", rc);
+			return rc;
+		}
+
+		rc = smblib_masked_write(chg, DCIN_AICL_OPTIONS_CFG_REG,
+			DCIN_AICL_START_AT_MAX_BIT, 0);
+		if (rc < 0) {
+			dev_err(chg->dev,
+				"Couldn't configure dcin AICL, rc=%d\n", rc);
+			return rc;
+		}
+	}
+
 	return rc;
 }
 
