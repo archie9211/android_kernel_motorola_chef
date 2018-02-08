@@ -108,6 +108,15 @@ static void mdss_dba_utils_notify_display(
 		udata->sdev_display.state == state ?
 		"is same" : "switched to",
 		udata->sdev_display.state);
+	if (udata->ext_audio_data.intf_ops.hpd) {
+		u32 flags = 0;
+		flags |= MSM_EXT_DISP_HPD_ASYNC_VIDEO;
+		if (!hdmi_edid_is_dvi_mode(udata->edid_data))
+			flags |= MSM_EXT_DISP_HPD_AUDIO;
+		udata->ext_audio_data.intf_ops.hpd(udata->ext_pdev,
+				udata->ext_audio_data.type, val, flags);
+	} else
+		pr_err("%s: did not register with ext_display", __func__);
 }
 
 static void mdss_dba_utils_notify_audio(
