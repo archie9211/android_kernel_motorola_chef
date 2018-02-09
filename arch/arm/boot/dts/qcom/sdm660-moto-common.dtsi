@@ -1,0 +1,749 @@
+/* Copyright (c) 2016, Motorola Mobility Inc. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "sdm660-pinctrl.dtsi"
+#include "sdm660-moto-pinctrl.dtsi"
+#include "sdm660-moto-audio.dtsi"
+#include "dsi-panel-mot-dummy-qhd-video.dtsi"
+#include "dsi-panel-mot-tianma-520-1080p-vid.dtsi"
+#include "dsi-panel-mot-boe-520-1080p-vid.dtsi"
+#include "sdm660-moto-fps.dtsi"
+#include <moto-mem-reserve.h>
+/ {
+	utags {
+		compatible = "mmi,utags";
+		mmi,main-utags = "/dev/block/bootdevice/by-name/utags";
+		mmi,backup-utags = "/dev/block/bootdevice/by-name/utagsBackup";
+	};
+
+	hw {
+		compatible = "mmi,utags";
+		mmi,dir-name = "hw";
+		mmi,main-utags = "/dev/block/bootdevice/by-name/hw";
+	};
+
+	mot_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		df-serialnum = "SB18C20118";
+		#include "batterydata-js40-scud-pm660.dtsi"
+		#include "batterydata-js40-swd-pm660.dtsi"
+	};
+
+	reserved-memory {
+		ramoops_mem: ramoops_mem_region {
+			no-map;
+			reg = <0x0 0xaf000000 0x0 0x80000>;
+			label = "ramoops_mem";
+		};
+
+		tzlog_bck_mem: tzlog_bck_region {
+			no-map;
+			reg = <0x0 TZLOG_BCK_BASE_8998
+				0x0 TZLOG_BCK_SIZE>;
+			label = "tzlog_bck_mem";
+		};
+
+		wdog_cpuctx_mem: wdog_cpuctx_region {
+			no-map;
+			reg = <0x0 WDOG_CPUCTX_BASE_8998
+				0x0 WDOG_CPUCTX_SIZE_8998>;
+			label = "wdog_cpuctx_mem";
+		};
+	};
+};
+
+&uartblsp1dm1 {
+	status = "ok";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart_console_active>;
+};
+
+&ufsphy1 {
+	vdda-phy-supply = <&pm660l_l1>;
+	vdda-pll-supply = <&pm660_l10>;
+	vddp-ref-clk-supply = <&pm660_l1>;
+	vdda-phy-max-microamp = <51400>;
+	vdda-pll-max-microamp = <14200>;
+	vddp-ref-clk-max-microamp = <100>;
+	vddp-ref-clk-always-on;
+	status = "ok";
+};
+
+&ufs1 {
+	vdd-hba-supply = <&gdsc_ufs>;
+	vdd-hba-fixed-regulator;
+	vcc-supply = <&pm660l_l4>;
+	vccq2-supply = <&pm660_l8>;
+	vcc-max-microamp = <500000>;
+	vccq2-max-microamp = <600000>;
+	status = "ok";
+};
+
+&pm660_gpios {
+	/* GPIO 3 (mod spi/i2c select) */
+	gpio@c200 {
+		qcom,mode = <0>;
+		qcom,vin-sel = <1>;
+		qcom,src-sel = <0>;
+		qcom,master-en = <1>;
+		status = "okay";
+	};
+
+	/* GPIO 4 (mod usb select) */
+	gpio@c300 {
+		qcom,mode = <0>;
+		qcom,vin-sel = <1>;
+		qcom,src-sel = <0>;
+		qcom,master-en = <1>;
+		status = "okay";
+	};
+};
+
+&i2c_6 { /* BLSP1 QUP6 (NFC) */
+	status = "okay";
+	nq@28 {
+		compatible = "qcom,nq-nci";
+		reg = <0x28>;
+		qcom,nq-irq = <&tlmm 28 0x00>;
+		qcom,nq-ven = <&tlmm 29 0x00>;
+		qcom,nq-firm = <&tlmm 30 0x00>;
+		qcom,nq-clkreq = <&pm660_gpios 4 0x00>;
+		qcom,nq-esepwr = <&tlmm 31 0x00>;
+		interrupt-parent = <&tlmm>;
+		qcom,clk-src = "BBCLK3";
+		interrupts = <28 0>;
+		interrupt-names = "nfc_irq";
+		pinctrl-names = "nfc_active", "nfc_suspend";
+		pinctrl-0 = <&nfc_int_active &nfc_enable_active>;
+		pinctrl-1 = <&nfc_int_suspend &nfc_enable_suspend>;
+		clocks = <&clock_rpmcc RPM_LN_BB_CLK3_PIN>;
+		clock-names = "ref_clk";
+	};
+};
+
+&i2c_3 { /* BLSP1 QUP3 */
+	status = "okay";
+	focaltech_ts@38 {
+		compatible = "focaltech,5x06";
+		reg = <0x38>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <67 0x2008>;
+		pinctrl-names = "pmx_ts_active", "pmx_ts_suspend";
+		pinctrl-0 = <&ts_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		focaltech,name = "ft8716";
+		focaltech,family-id = <0x87>;
+		focaltech,reset-gpio = <&tlmm 66 0x00>;
+		focaltech,irq-gpio = <&tlmm 67 0x2008>;
+		focaltech,display-coords = <0 0 1080 1920>;
+		focaltech,panel-coords = <0 0 1080 1920>;
+		focaltech,i2c-pull-up;
+		focaltech,group-id = <1>;
+		focaltech,hard-reset-delay-ms = <20>;
+		focaltech,soft-reset-delay-ms = <200>;
+		focaltech,num-max-touches = <10>;
+		focaltech,fw-delay-aa-ms = <2>;
+		focaltech,fw-delay-55-ms = <2>;
+		focaltech,fw-upgrade-id1 = <0x87>;
+		focaltech,fw-upgrade-id2 = <0xA6>;
+		focaltech,fw-delay-readid-ms = <20>;
+		focaltech,fw-delay-era-flsh-ms = <2000>;
+		focaltech,resume-in-workqueue;
+	};
+};
+
+&mdss_mdp {
+	qcom,mdss-pref-prim-intf = "dsi";
+};
+
+&mdss_dsi {
+	hw-config = "single_dsi";
+};
+
+&mdss_dsi0 {
+	qcom,dsi-pref-prim-pan = <&mot_tianma_520_1080p_vid_v0>;
+	pinctrl-names = "mdss_default", "mdss_sleep";
+	pinctrl-0 = <&mdss_dsi_active &mdss_te_active>;
+	pinctrl-1 = <&mdss_dsi_suspend &mdss_te_suspend>;
+	qcom,platform-reset-gpio = <&tlmm 53 0>;
+	qcom,platform-te-gpio = <&tlmm 59 0>;
+};
+
+&mdss_dsi1 {
+	status = "disabled";
+};
+
+&pm660l_wled {
+	en-sdm660l-ovp-disable;
+};
+
+&sdhc_1 {
+	/* device core power supply */
+	vdd-supply = <&pm660l_l4>;
+	qcom,vdd-voltage-level = <2950000 2950000>;
+	qcom,vdd-current-level = <200 570000>;
+
+	/* device communication power supply */
+	vdd-io-supply = <&pm660_l8>;
+	qcom,vdd-io-always-on;
+	qcom,vdd-io-lpm-sup;
+	qcom,vdd-io-voltage-level = <1800000 1800000>;
+	qcom,vdd-io-current-level = <200 325000>;
+
+	pinctrl-names = "active", "sleep";
+	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on &sdc1_rclk_on>;
+	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off &sdc1_rclk_off>;
+
+	qcom,clk-rates = <400000 20000000 25000000 50000000 100000000 192000000
+								384000000>;
+
+	qcom,nonremovable;
+	qcom,bus-speed-mode = "HS400_1p8v", "HS200_1p8v", "DDR_1p8v";
+
+	status = "ok";
+};
+
+&sdhc_2 {
+	/* device core power supply */
+	vdd-supply = <&pm660l_l5>;
+	qcom,vdd-voltage-level = <2950000 2950000>;
+	qcom,vdd-current-level = <15000 800000>;
+
+	/* device communication power supply */
+	vdd-io-supply = <&pm660l_l2>;
+	qcom,vdd-io-voltage-level = <1800000 2950000>;
+	qcom,vdd-io-current-level = <200 22000>;
+
+	pinctrl-names = "active", "sleep";
+	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on &sdc2_cd_on>;
+	pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off &sdc2_cd_off>;
+
+	#address-cells = <0>;
+	interrupt-parent = <&sdhc_2>;
+	interrupts = <0 1 2>;
+	#interrupt-cells = <1>;
+	interrupt-map-mask = <0xffffffff>;
+	interrupt-map = <0 &intc 0 0 125 0
+			1 &intc 0 0 221 0
+			2 &tlmm 54 0>;
+	interrupt-names = "hc_irq", "pwr_irq", "status_irq";
+	cd-gpios = <&tlmm 54 0x0>;
+
+	qcom,clk-rates = <400000 20000000 25000000 50000000 100000000
+								200000000>;
+	qcom,bus-speed-mode = "SDR12", "SDR25", "SDR50", "DDR50", "SDR104";
+
+	status = "ok";
+};
+
+&soc {
+	qcom,msm-ssc-sensors {
+		compatible = "qcom,msm-ssc-sensors";
+	};
+
+	qcom,sensor-information {
+		sensor_information22: qcom,sensor-information-22 {
+			qcom,sensor-type =  "adc";
+			qcom,sensor-name = "chg_therm";
+		};
+		sensor_information23: qcom,sensor-information-23 {
+			qcom,sensor-type =  "adc";
+			qcom,sensor-name = "pcm_therm";
+			qcom,scaling-factor = <1000>;
+		};
+		sensor_information24: qcom,sensor-information-24 {
+			qcom,sensor-type = "adc";
+			qcom,sensor-name = "battery";
+			qcom,alias-name  = "batt_therm";
+			qcom,scaling-factor = <1000>;
+		};
+	};
+
+	rradc_typec_temp: typec-temp-sensor {
+		compatible = "generic-adc-thermal";
+		#thermal-sensor-cells = <0>;
+		io-channels = <&pm660_rradc 2>;
+		io-channel-names = "sensor-channel";
+	};
+
+	thermal-zones {
+		pcm_therm {
+			polling-delay = <100>; /* milliseconds */
+			polling-delay-passive = <100>; /* milliseconds */
+			thermal-sensors = <&rradc_typec_temp>;
+		};
+	};
+
+	muc: muc {
+		compatible = "mmi,muc";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0 0 0xffffffff>;
+
+		gpios = <&tlmm 43 1>,         /* gpio_muc_det_n, input */
+			<&pcal_pin_2 4 0>, /* gpio_muc_bplus_en, output-low */
+			<&tlmm 42 1>,         /* gpio_muc_int_n, input */
+			<&tlmm 75 2>,         /* gpio_muc_wake_n, output-high */
+			<&tlmm 48 1>,         /* gpio_muc_rdy_n, input */
+			<&pcal_pin_2 11 0>,  /* gpio_muc_ff, output-low */
+			<&tlmm 28 0>,          /* gpio_muc_spi_mosi, output-low */
+			<&tlmm 29 1>,          /* gpio_muc_spi_miso, input */
+			<&lpi_tlmm 27 2>,        /* gpio_muc_bplus_iset, output-high */
+			<&pcal_pin_2 7 2>,     /* gpio_muc_bplus_discharg, cs */
+			<&tlmm 76 1>,  /* gpio_muc_bplus_fault_n, input */
+			<&tlmm 31 1>,          /* gpio_muc_clk, input */
+			<&pm660_gpios 3 0>;          /* spi-i2c select pin */
+
+		mmi,muc-ctrl-gpio-labels = "gpio_muc_det_n",
+					"gpio_muc_bplus_en",
+					"gpio_muc_int_n",
+					"gpio_muc_wake_n",
+					"gpio_muc_rdy_n",
+					"gpio_muc_ff",
+					"gpio_muc_spi_mosi",
+					"gpio_muc_spi_miso",
+					"gpio_muc_bplus_iset",
+					"gpio_muc_bplus_discharg",
+					"gpio_muc_bplus_fault_n",
+					"gpio_muc_clk",
+					"gpio_muc_spi_i2c_select";
+
+		/* Addison has shared muc/flash SPI. */
+		mmi,spi-shared-with-flash;
+
+		mmi,muc-ctrl-det-hysteresis = <200>;
+		mmi,muc-ctrl-rm-hysteresis = <5>;
+		mmi,muc-ctrl-en-seq = <1 1 100>;
+		mmi,muc-ctrl-dis-seq = <1 0 505>;
+
+		mmi,muc-ctrl-select-spi-seq = <12 0 100>;
+		mmi,muc-ctrl-select-i2c-seq = <12 1 100>;
+
+		/* v1 FF first, BPLUS second on enable */
+		mmi,muc-ctrl-ff-seq-v1 = <5 1 20>, <1 0 100>,
+					<1 1 100>, <5 0 20>;
+
+		/* v2 BPLUS first, FF second on enable */
+		mmi,muc-ctrl-ff-seq-v2 = <1 1 100>, <5 1 20>,
+					<5 0 20>;
+
+		pinctrl-names = "disconnected", "spi_active", "spi_ack", "i2c_active";
+		pinctrl-0 = <&muc_attach &muc_det &spi_8_sleep &spi8_cs0_sleep &muc_spi_ctrl>;
+		pinctrl-1 = <&muc_attach &muc_det &spi_8_active &spi8_cs0_active &muc_spi_ctrl>;
+		pinctrl-2 = <&spi_8_mosi_ack &spi_8_miso_ack>;
+		pinctrl-3 = <&muc_attach &muc_det &i2c_8_active &muc_spi_ctrl>;
+
+		transports {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 0 0xffffffff>;
+
+			/* Placeholder for SPI defined later */
+			mods_spi: spi@c1b8000 { };
+
+			/* Placeholder for I2C defined later */
+			mods_i2c: i2c@c1b8000 { };
+		};
+	};
+
+	muc_svc: muc_svc@0 {
+		compatible = "mmi,muc_svc";
+
+		mmi,use-authentication;
+		mmi,endo-mask = <0x4755>;
+		mmi,default-root-ver = /bits/ 8 <2>;
+	};
+
+	dsi_mod_display_driver: dsi_mod_display_driver {
+		compatible = "mmi,dsi_mod_display";
+
+		mod_display,dsi_connect = <1>;
+	};
+
+	mot_dba_driver: mot_dba_driver {
+		compatible = "mmi,mot_dba";
+	};
+
+	apba_ctrl {
+		compatible = "mmi,apba-ctrl";
+		reg = <0 0>;
+		clock-names = "apba_mclk";
+		qcom,clk-src = "BBCLK2";
+		clocks = <&clock_rpmcc RPM_LN_BB_CLK2>;
+		pinctrl-names = "default", "spi_active";
+		pinctrl-0 = <&apba_default &spi8_cs1_sleep>;
+		pinctrl-1 = <&apba_default &spi8_cs1_active>;
+		gpios = <&pm660l_gpios 4 0>,      /* APBA_1P1_EN, output-low */
+			<&tlmm 47 0>,     /* APBA_BOOTRET, output-low */
+			<&pm660_gpios 11 2>, /* MOD_MPHY_I2S_SEL, output-high */
+			<&lpi_tlmm 21 0>,     /* APBA_RESET_N, output-low */
+			<&tlmm 64 1>,      /* APBA_INT_N, in */
+			<&tlmm 49 0>,     /* APBA_WAKE, output-low */
+			<&pcal_pin 7 0>;      /* APBA_SFLASH_EN, output-low */
+		mmi,gpio-labels = "gpio_apba_1p1_en",
+				  "gpio_apba_bootret",
+				  "gpio_mphy_i2s_sel",
+				  "gpio_apba_rst_n",
+				  "gpio_apba_int_n",
+				  "gpio_apba_wake",
+				  "gpio_apba_sflash_en";
+		mmi,int-index = <4>;
+		/* Notes about boot sequence:  w25q40bw spec says 10 usec needed
+		   from VCC high to first /CS low for read.  It requires 10 msec max
+		   until first write. */
+		/* ES3 AP Bridge power on sequence requires 40 usec minimum between
+		   (APBA_VDDIO + SYS_CLK) and SYS_RESET_N high, and requires RESET_N low during
+		   boot. */
+		mmi,enable-preclk-seq = <6 0 0>, <3 0 0>, <5 1 0>, <0 1 0>,
+				 <1 0 0>, <2 0 1>;
+		mmi,enable-postclk-seq = <3 1 0>;
+		mmi,disable-seq = <1 0 0>, <2 1 0>, <3 0 1>, <5 0 0>, <0 0 0>;
+		mmi,wake-assert-seq = <5 0 0>;
+		mmi,wake-deassert-seq = <5 1 0>;
+		mmi,flash-start-seq = <6 1 0>, <0 1 11>;
+		mmi,flash-end-seq = <0 0 0>, <6 0 0>;
+		mmi,apba-unipro-mid = <0x00000126>;
+		mmi,apba-unipro-pid = <0x00001001>;
+		mmi,apba-ara-vid = <0xfed70128>;
+		mmi,apba-ara-pid = <0xfffe0001>;
+	};
+
+	mods_camera_ext {
+		compatible = "mmi,mods-camera-ext";
+		/*camera_ext_cdsi-supply = <&pm8953_l23>;*/
+	};
+
+	mod_uart: mod_uart {
+		compatible = "mmi,mod-uart";
+		mmi,tty = "ttyHS1";
+		mmi,tty_speed = <115200>;
+		mmi,intf-id = /bits/ 8 <5>;
+
+		pinctrl-names = "default", "active";
+		pinctrl-0 = <&blsp_uart1_sleep>;
+		pinctrl-1 = <&blsp_uart1_active>;
+	};
+
+	modbus_switch {
+		status = "okay";
+		compatible = "mmi,mods-switch";
+
+		vdd-switch-supply = <&pm660l_l3>;
+		mmi,vdd-voltage-level = <3300000 3300000>;
+
+		gpios = <&pm660_gpios 11 0>, /*MOD_MPHY_EN, output hgih*/
+			<&pm660_gpios 12 0>,  /* MOD_MPHY_SEL0, output high */
+			<&pm660_gpios 13 0>;           /* MOD_MPHY_SEL1, output high */
+		mmi,mods-switch-gpio-labels = "MOD_MPHY_EN",
+						"MOD_MPHY_SEL0",
+						"MOD_MPHY_SEL1";
+		mmi,mods-switch-seq = <1 0 0>,
+					<1 0 1>,
+					<1 1 1>;
+		/*The string need to be as the same as protocol_list in mods_switch.c*/
+		/*The array sequence refers to the sequence of "mmi,mods-switch-seq"*/
+		mmi,mods-switch-seq-labels = "usbss",
+						"mphy",
+						"i2s";
+	};
+
+	ramoops {
+		compatible = "ramoops";
+		status = "ok";
+
+		console-size = <0x0 0x40000>;
+		record-size = <0x0 0x3f800>;
+		ramoops-annotate-size = <0x0 0x800>;
+
+		memory-region = <&ramoops_mem>;
+	};
+
+	wdog: qcom,wdt@17817000 {
+		qcom,bark-time = <22000>;
+		linux,contiguous-region = <&wdog_cpuctx_mem>;
+	};
+
+	qcom_tzlog: tz-log@146bf720 {
+		status = "okay";
+		linux,contiguous-region = <&tzlog_bck_mem>;
+	};
+};
+
+&blsp1_uart1_hs {
+	status = "okay";
+
+	/delete-property/ qcom,inject-rx-on-wakeup;
+	/delete-property/ qcom,rx-char-to-inject;
+
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+
+	qcom,shared;
+};
+
+&pm660_vadc {
+	chan@4e {
+		label = "chg_therm";
+		reg = <0x4e>;
+		qcom,decimation = <2>;
+		qcom,pre-div-channel-scaling = <0>;
+		qcom,calibration-type = "ratiometric";
+		qcom,scale-function = <2>;
+		qcom,hw-settle-time = <2>;
+		qcom,fast-avg-setup = <0>;
+	};
+};
+
+&pm660_adc_tm {
+	chan@4e {
+		label = "chg_therm";
+		reg = <0x4e>;
+		qcom,pre-div-channel-scaling = <0>;
+		qcom,calibration-type = "ratiometric";
+		qcom,scale-function = <2>;
+		qcom,hw-settle-time = <2>;
+		qcom,btm-channel-number = <0x70>;
+		qcom,thermal-node;
+	};
+};
+
+&mods_i2c { /* BLSP2 QUP4 */
+	compatible = "qcom,i2c-msm-v2";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0xc1b8000  0x600>;
+	reg-names = "qup_phys_addr";
+	interrupt-names = "qup_irq";
+	interrupts = <0 104 0>;
+	dmas = <&dma_blsp2 10 64 0x20000020 0x20>,
+		<&dma_blsp2 11 32 0x20000020 0x20>;
+	dma-names = "tx", "rx";
+	qcom,master-id = <84>;
+	qcom,clk-freq-out = <400000>;
+	qcom,clk-freq-in  = <19200000>;
+	clock-names = "iface_clk", "core_clk";
+	clocks = <&clock_gcc GCC_BLSP2_AHB_CLK>,
+		 <&clock_gcc GCC_BLSP2_QUP4_I2C_APPS_CLK>;
+	pinctrl-names = "i2c_active", "i2c_sleep";
+	pinctrl-0 = <&i2c_8_active>;
+	pinctrl-1 = <&i2c_8_sleep>;
+	status = "disabled";
+};
+
+&mods_i2c {
+	compatible = "qcom,i2c-msm-v2", "moto,mod-i2c-transfer";
+	status = "okay";
+
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+	/delete-property/ pinctrl-names;
+
+	muc_i2c@42 {
+		compatible = "moto,muc_i2c";
+		reg = <0x42>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <26 0>;
+
+		mmi,intf-id = /bits/ 8 <3>;
+	};
+};
+
+&mods_spi { /* BLSP2 QUP4 */
+	compatible = "qcom,spi-qup-v2";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg-names = "spi_physical", "spi_bam_physical";
+	reg = <0xc1b8000 0x600>,
+	      <0xc184000 0x1f000>;
+	interrupt-names = "spi_irq", "spi_bam_irq";
+	interrupts = <0 104 0>, <0 239 0>;
+	spi-max-frequency = <48000000>;
+	qcom,use-bam;
+	qcom,ver-reg-exists;
+	qcom,bam-consumer-pipe-index = <10>;
+	qcom,bam-producer-pipe-index = <11>;
+	qcom,master-id = <84>;
+	qcom,use-pinctrl;
+	pinctrl-names = "spi_default", "spi_sleep";
+	pinctrl-0 = <&spi_8_active>;
+	pinctrl-1 = <&spi_8_sleep>;
+	clock-names = "iface_clk", "core_clk";
+	clocks = <&clock_gcc GCC_BLSP2_AHB_CLK>,
+		 <&clock_gcc GCC_BLSP2_QUP4_SPI_APPS_CLK>;
+	status = "disabled";
+};
+
+&mods_spi {
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+	/delete-property/ pinctrl-names;
+	/delete-property/ qcom,use-pinctrl;
+
+	status = "okay";
+	compatible = "qcom,spi-qup-v2", "moto,mod-spi-transfer";
+	spi-max-frequency = <50000000>;
+
+	qcom,rt-priority;
+	qcom,active-only;
+
+	muc_spi: muc_spi@0 {
+		compatible = "moto,muc_spi";
+		reg = <0>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <42 0>;
+		spi-max-frequency = <4800000>;
+
+		mmi,intf-id = /bits/ 8 <3>;
+	};
+
+	apba_flash: m25p80@1 {
+		compatible = "w25q40ew";
+		reg = <1>;
+		spi-max-frequency = <4800000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "apba";
+			reg = <0x0 0x40000>;
+		};
+		partition@1 {
+			label = "es2_apbaboot";
+			reg = <0x0 0x4000>;
+		};
+		partition@2 {
+			label = "es2_apba";
+			reg = <0x4000 0x3C000>;
+		};
+	};
+};
+
+&mem_client_3_size {
+	qcom,peripheral-size = <0x500000>;
+};
+
+&spmi_bus {
+	qcom,pm660l@2 {
+		qcom,power-on@800 {
+			qcom,shipmode;
+		};
+	};
+};
+
+&pm660_fg {
+	qcom,battery-data = <&mot_batterydata>;
+	qcom,fg-force-load-profile = <1>;
+	qcom,fg-cutoff-voltage = <3200>;
+	qcom,fg-empty-voltage = <3000>;
+	qcom,fg-chg-term-current = <100>;
+	qcom,fg-sys-term-current = <(-273)>;
+	qcom,fg-delta-soc-thr = <1>;
+	qcom,fg-jeita-thresholds = <(-20)>, <0>, <45>, <60>;
+};
+
+&pm660_charger {
+	qcom,fcc-max-ua = <3000000>;
+	qcom,fv-max-uv = <4400000>;
+	qcom,usb-icl-ua = <3000000>;
+	qcom,dc-icl-ua = <3000000>;
+	qcom,eb-batt-psy-name = "gb_battery";
+	qcom,eb-pwr-psy-name = "gb_ptp";
+	qcom,dc-eb-icl-ma = <900>;
+	qcom,dc-eb-icl-eff-ma = <500>;
+	qcom,iterm-ma = <146>;
+	qcom,thermal-mitigation = <3000>,
+				   <2500>,
+				   <1500>,
+				   <900>,
+				   <600>,
+				   <300>;
+	qcom,dc-thermal-mitigation = <3000>,
+				     <1500>,
+				     <900>,
+				     <600>,
+				     <300>;
+	qcom,mmi-temp-zones = <0 4400 529 0>,
+				<10 4200 1323 529>,
+				<15 0 1323 1323>,
+				<45 4250 3000 2000>,
+				<60 4200 2000 0>;
+	qcom,enable-charging-limit;
+	qcom,upper-limit-capacity = <75>;
+	qcom,lower-limit-capacity = <60>;
+	qcom,vfloat-comp-uv = <20000>;
+	qcom,hvdcp-force-5v;
+	qcom,usbpd-phandle = <&pm660_pdphy>;
+};
+
+&rpm_bus {
+	rpm-regulator-ldoa18 {
+		compatible = "qcom,rpm-smd-regulator-resource";
+		qcom,resource-name = "ldoa";
+		qcom,resource-id = <18>;
+		qcom,regulator-type = <0>;
+		status = "okay";
+		pm660_l18: regulator-l18 {
+			compatible = "qcom,rpm-smd-regulator";
+			regulator-name = "pm660_l18";
+			qcom,set = <3>;
+			regulator-min-microvolt = <3200000>;
+			regulator-max-microvolt = <3400000>;
+			status = "okay";
+		};
+	};
+};
+
+&pm660_pdphy {
+	qcom,default-sink-caps = <5000 3000>; /* 5V @ 3A */
+};
+
+&pm660_charger {
+	gpios = <&pm660l_gpios 8 0x0>; /* GPIOF_OUT_INIT_LOW */
+	gpio-names = "eb_vbus_en";
+};
+
+&usb3{
+	mmi,ext-typec-switch;
+	qcom,ssusb-compliance;
+	pinctrl-names = "default";
+	pinctrl-0 = <&usb_hs_sel>;
+
+	mmi,mods-support;
+	mod-usb-hub = <&usb3813>;
+	mmi,mod-hs-switch = <&pm660_gpios 4 0>;           /* USB_HS_SEL, output-low */
+};
+
+&i2c_2 {
+	pcal_pin:gpio@20 {
+		status = "disabled";
+	};
+
+	pcal_pin_2:gpio@21 {
+		status = "disabled";
+	};
+
+	usb3813: usb3813@2D {
+		status = "ok";
+		compatible = "microchip,usb3813";
+		reg = <0x2D>;
+		gpios = <&tlmm 12 0x0>,   /* HUB_RESET_EN */
+			<&tlmm 13 0x1>;    /* HUB_INT_EN */
+		gpio-labels = "gpio_hub_reset_n",
+			"gpio_hub_int_n";
+		clock-names = "hub_clk";
+		qcom,clk-src = "BBCLK2";
+		clocks = <&clock_rpmcc RPM_LN_BB_CLK2>;
+		enable-usbhost;
+		vdd-hsic-supply = <&pm660_l13>;
+	};
+};
