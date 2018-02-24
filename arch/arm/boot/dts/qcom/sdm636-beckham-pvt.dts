@@ -17,10 +17,5 @@
 #include "sdm636-beckham.dtsi"
 
 / {
-	qcom,board-id = <0x4A 0xB300>;
-};
-
-&anx_slimport {
-	analogix,p-dwn-gpio = <&tlmm 55 0>;
-	analogix,vdd-1p0-enable-gpio = <&tlmm 80 0x0>;
+	qcom,board-id = <0x4A 0xC000>;
 };
