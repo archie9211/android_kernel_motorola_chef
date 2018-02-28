@@ -1523,6 +1523,11 @@ int ospl2xx_afe_apr_send_pkt(void *data, int index)
 {
 	int ret = 0;
 
+	ret = afe_q6_interface_prepare();
+	if (ret != 0) {
+		pr_err("%s: Q6 interface prepare failed %d\n", __func__, ret);
+		return -EINVAL;
+	}
 	ret = afe_apr_send_pkt(data, &this_afe.wait[index]);
 	return ret;
 }
@@ -1533,6 +1538,11 @@ int tas2560_algo_afe_apr_send_pkt(void *data, int index)
 {
 	int ret = 0;
 
+	ret = afe_q6_interface_prepare();
+	if (ret != 0) {
+		pr_err("%s: Q6 interface prepare failed %d\n", __func__, ret);
+		return -EINVAL;
+	}
 	ret = afe_apr_send_pkt(data, &this_afe.wait[index]);
 	return ret;
 }
