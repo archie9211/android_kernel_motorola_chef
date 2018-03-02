@@ -1,0 +1,437 @@
+/* Copyright (c) 2016, Motorola Mobility Inc. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "msm8998-moto-common.dtsi"
+#include "dsi-panel-mot-smd-546-QHD-g-cmd.dtsi"
+#include "dsi-panel-mot-smd-546-QHD-p-cmd.dtsi"
+
+/ {
+	model = "Saratoga";
+	compatible = "qcom,msm8998-saratoga", "qcom,msm8998-moto",
+			"qcom,msm8998";
+	aliases {
+		uart5 = &blsp2_uart2_hs;
+		spi9 = &spi_9;
+	};
+};
+
+&pm8998_l25 {
+	regulator-min-microvolt = <3312000>;
+	regulator-max-microvolt = <3312000>;
+	qcom,init-voltage = <3312000>;
+};
+
+&spi_9 { /* BLSP2 QUP3 */
+	status = "okay";
+
+	cs47l35: cs47l35@0 {
+		compatible = "cirrus,cs47l35";
+		spi-max-frequency = <26000000>;
+		reg = <0x0>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <54 0>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		reset-gpios = <&tlmm 68 0>;
+		cirrus,micbias1 = <1800 1 1 1 1 1 1 0>;
+		cirrus,micbias2 = <1800 1 1 1 1 1 1 0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&marley_irq_default &marley_reset_default>;
+
+		AVDD-supply = <&pm8998_l6>;
+		DBVDD1-supply = <&pm8998_l6>;
+		DBVDD2-supply = <&pm8998_l6>;
+		CPVDD-supply = <&pm8998_l6>;
+		CPVDD1-supply = <&pm8998_l6>;
+		CPVDD2-supply = <&pm8998_l6>;
+		DCVDD-supply = <&pm8998_l6>;
+		SPKVDD-supply = <&dummy_vreg>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+
+		cirrus,gpio-defaults = <
+			0x00002000 0x0000f000 /* AIF3TXDAT / GPIO1  */
+			0x00002000 0x0000f000 /* AIF3BCLK  / GPIO2  */
+			0x00000040 0x00000000 /* AIF3RXDAT / GPIO3  */
+			0x00002000 0x0000f000 /* AIF3LRCLK / GPIO4  */
+			0xffffffff 0xffffffff /* GPIO5 */
+			0xffffffff 0xffffffff /* GPIO6 */
+			0x00002000 0x0000f000 /* MIF1SDA   / GPIO7  */
+			0x00002000 0x0000f000 /* AIF1RXDAT / GPIO8  */
+			0x00002000 0x0000f000 /* AIF1BCLK  / GPIO9  */
+			0x00002000 0x0000f000 /* AIF1TXDAT / GPIO10 */
+			0x00002000 0x0000f000 /* AIF1LRCLK / GPIO11 */
+			0x00002000 0x0000f000 /* AIF2TXDAT / GPIO12 */
+			0x00002000 0x0000f000 /* AIF2BCLK  / GPIO13 */
+			0x00002000 0x0000f000 /* AIF2RXDAT / GPIO14 */
+			0x00002000 0x0000f000 /* AIF2LRCLK / GPIO15 */
+			0x00002000 0x0000f000 /* MIF1SCLK  / GPIO16 */
+			>;
+
+		adsps {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			adsp@0ffe00 {
+				reg = <0x0ffe00>;
+				firmware {
+					ultrasound {
+						wlf,wmfw-file = "ultrasound";
+						wlf,bin-file = "ultrasound";
+						wlf,compr-caps = <1 1 4 1 96000>;
+					};
+				};
+			};
+			adsp@17fe00 {
+				reg = <0x17fe00>;
+				firmware {
+					frontend {
+						wlf,wmfw-file = "aov-frontend";
+						wlf,bin-file = "aov-vrgain";
+						wlf,compr-caps = <1 1 4 1 16000>;
+					};
+				};
+			};
+			adsp@1ffe00 {
+				reg = <0x1ffe00>;
+				firmware {
+					aov {
+						wlf,wmfw-file = "aov-control";
+						wlf,bin-file = "aov-model";
+						wlf,compr-caps = <1 1 4 1 16000>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&i2c_7 {
+	fsa8500@23 {
+		compatible = "fairchild,fsa8500";
+		reg = <0x23>;
+		gpios = <&tlmm 63 0x0>;
+		fsa8500-init-regs = <0x0c 0x41>,
+				    <0x0f 0xf9>,
+				    <0x11 0x84>,
+				    <0x13 0xbf>,
+				    <0x14 0x69>;
+
+		fsa8500-keymap = <0x4000000 0xe2>, /* SND_JACK_BTN_0 - KEY_MEDIA */
+				 <0x0400000 0x246>, /* SND_JACK_BTN_4 - KEY_VOICECOMMAND */
+				 <0x0200000 0x73>, /* SND_JACK_BTN_5 - KEY_VOLUMEUP */
+				 <0x0100000 0x72>; /* SND_JACK_BTN_6 - KEY_VOLUMEDOWN */
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&fsa8500_hs_det_default>;
+		fsa8500-lint-disabled;
+		/* If FSA controls L22 it breaks all devices on the same bus
+		that try to start earlier. L22 will be turned on in BL eventually */
+		/* hs_det_vdd-supply = <&pm8998_l22>; */
+	};
+
+	analogix_anx78e6@72 {
+		analogix,vdd_33-supply = <&pm8998_l25>;
+		analogix,vdd_10-supply = <&pm8998_l3>;
+	};
+};
+
+&i2c_8 {
+	synaptics_dsx_i2c@20 {
+		interrupts = <40 0>;
+		gpios = <&tlmm 40 0>, /* IRQ */
+			<&tlmm 39 0>; /* RESET */
+	};
+};
+
+&touch_int_active {
+	mux {
+		pins = "gpio40";
+	};
+	config {
+		pins = "gpio40";
+	};
+};
+
+&touch_int_suspend {
+	mux {
+		pins = "gpio40";
+	};
+	config {
+		pins = "gpio40";
+	};
+};
+
+/delete-node/ &mods_spi;
+/delete-node/ &mods_i2c;
+
+&muc {
+	gpios = <&tlmm 36 1>,            /* gpio_muc_det_n, input */
+		<&tlmm 35 0>,            /* gpio_muc_bplus_en, output-low */
+		<&tlmm 26 1>,            /* gpio_muc_int_n, input */
+		<&tlmm 28 2>,            /* gpio_muc_wake_n, output-high */
+		<&tlmm 95 1>,            /* gpio_muc_rdy_n, input */
+		<&tlmm 143 0>,           /* gpio_muc_ff, output-low */
+		<&tlmm 0 0>,             /* gpio_muc_spi_mosi, output-low */
+		<&tlmm 1 1>,             /* gpio_muc_spi_miso, input */
+		<&pmi8998_gpios 11 0>, /* gpio_muc_bplus_iset, cs */
+		<0>,                     /* gpio_muc_bplus_discharg, cs */
+		<&pmi8998_gpios 10 1>, /* gpio_muc_bplus_fault_n, input */
+		<&tlmm 3 1>;             /* gpio_muc_clk, input */
+
+	pinctrl-0 = <&muc_attach &muc_det &spi_1_sleep &muc_spi_ctrl>;
+	pinctrl-1 = <&muc_attach &muc_det &spi_1_active &muc_spi_ctrl>;
+	pinctrl-2 = <&spi_1_mosi_ack &spi_1_miso_ack>;
+	pinctrl-3 = <&muc_attach &muc_det &i2c_1_active &muc_spi_ctrl>;
+
+	transports {
+		/* Dummy Place Holder for SPI */
+		mods_spi: spi@c175000 { };
+
+		/* Dummy Place Holder for I2C */
+		mods_i2c: i2c@c175000 { };
+	};
+};
+
+/* Direct Copy of I2C1 from msm8998-blsp.dtsi */
+&mods_i2c {
+	compatible = "qcom,i2c-msm-v2";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg-names = "qup_phys_addr";
+	reg = <0xC175000 0x600>;
+	interrupt-names = "qup_irq";
+	interrupts = <0 95 0>;
+	dmas = <&dma_blsp1 6 64 0x20000020 0x20>,
+		<&dma_blsp1 7 32 0x20000020 0x20>;
+	dma-names = "tx", "rx";
+	qcom,master-id = <86>;
+	qcom,clk-freq-out = <400000>;
+	qcom,clk-freq-in  = <19200000>;
+	clock-names = "iface_clk", "core_clk";
+	clocks = <&clock_gcc clk_gcc_blsp1_ahb_clk>,
+		 <&clock_gcc clk_gcc_blsp1_qup1_i2c_apps_clk>;
+	pinctrl-names = "i2c_active", "i2c_sleep";
+	pinctrl-0 = <&i2c_1_active>;
+	pinctrl-1 = <&i2c_1_sleep>;
+	status = "disabled";
+};
+
+/* Overrides of the default I2C configuration for MUC usage */
+&mods_i2c {
+	compatible = "qcom,i2c-msm-v2", "moto,mod-i2c-transfer";
+	status = "okay";
+
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+	/delete-property/ pinctrl-names;
+
+	muc_i2c@42 {
+		compatible = "moto,muc_i2c";
+		reg = <0x42>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <26 0>;
+
+		mmi,intf-id = /bits/ 8 <3>;
+	};
+};
+
+/* Direct Copy of SPI1 from msm8998-blsp.dtsi */
+&mods_spi {
+	compatible = "qcom,spi-qup-v2";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg-names = "spi_physical", "spi_bam_physical";
+	reg = <0xC175000 0x600>,
+		<0xC144000 0x25000>;
+	interrupt-names = "spi_irq", "spi_bam_irq";
+	interrupts = <0 95 0>, <0 238 0>;
+	spi-max-frequency = <50000000>;
+	qcom,use-bam;
+	qcom,ver-reg-exists;
+	qcom,bam-consumer-pipe-index = <6>;
+	qcom,bam-producer-pipe-index = <7>;
+	qcom,master-id = <86>;
+	qcom,use-pinctrl;
+	pinctrl-names = "spi_default", "spi_sleep";
+	pinctrl-0 = <&spi_1_active>;
+	pinctrl-1 = <&spi_1_sleep>;
+	clock-names = "iface_clk", "core_clk";
+	clocks = <&clock_gcc clk_gcc_blsp1_ahb_clk>,
+		<&clock_gcc clk_gcc_blsp1_qup1_spi_apps_clk>;
+	status = "disabled";
+};
+
+/* Overrides of the default SPI configuration for MUC usage */
+&mods_spi {
+	compatible = "qcom,spi-qup-v2", "moto,mod-spi-transfer";
+	status = "okay";
+
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+	/delete-property/ pinctrl-names;
+	/delete-property/ qcom,use-pinctrl;
+
+	spi-max-frequency = <50000000>;
+
+	qcom,rt-priority;
+	qcom,active-only;
+
+	muc_spi: muc_spi@0 {
+		compatible = "moto,muc_spi";
+		reg = <0>;
+
+		interrupt-parent = <&tlmm>;
+		interrupts = <26 0>;
+		spi-max-frequency = <4800000>;
+
+		mmi,intf-id = /bits/ 8 <3>;
+	};
+};
+
+/* APBA UART on future products */
+&blsp2_uart3_hs {
+	status = "disable";
+};
+
+&blsp2_uart2_hs { /* APBA UART */
+	status = "disable"; /* Disabled while shared with console */
+
+	interrupt-map = <0 &intc 0 0 114 0
+		    1 &intc 0 0 239 0
+		    2 &tlmm 59 0>;
+
+	/delete-property/ qcom,inject-rx-on-wakeup;
+	/delete-property/ qcom,rx-char-to-inject;
+
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+
+	qcom,shared;
+};
+
+&mod_uart {
+	mmi,tty = "ttyHS5";
+
+	pinctrl-0 = <&blsp2_uart5_sleep &uart_console_inactive>;
+	pinctrl-1 = <&blsp2_uart5_active &uart_console_inactive>;
+};
+
+/* MODS Related */
+&tlmm {
+	spi_1 {
+		spi_1_active {
+			config {
+				drive-strength = <16>;
+			};
+		};
+
+		spi_1_sleep {
+			mux {
+				function = "gpio";
+			};
+
+			config {
+				drive-strength = <2>;
+				bias-pull-down;
+				input-enable;
+			};
+		};
+
+		spi_1_mosi_ack: spi_1_mosi_ack {
+			mux {
+				pins = "gpio0";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio0";
+				drive-strength = <2>;
+				bias-disable;
+				output-low;
+			};
+		};
+
+		spi_1_miso_ack: spi_1_miso_ack {
+			mux {
+				pins = "gpio1";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio1";
+				drive-strength = <2>;
+				bias-disable;
+				input-enable;
+			};
+		};
+	};
+};
+
+&soc {
+	sound {
+		cs47l35,micbias-routing =
+			"IN1AL", "MICBIAS1A",
+			"IN2L",  "MICBIAS1B",
+			"IN2R",  "MICBIAS2B",
+			"IN1BR", "MICBIAS2A";
+	};
+
+	vdd10_anx: vdd10_anx {
+		status = "disabled";
+	};
+};
+
+/* SD card slot is not functional */
+&sdhc_2 {
+	status = "disabled";
+};
+
+&tlmm {
+	sdc2_clk_on: sdc2_clk_on {
+		config {
+			pins = "sdc2_clk";
+			bias-disable;		/* NO pull */
+			drive-strength = <16>;	/* 16 MA */
+		};
+	};
+
+	sdc2_cmd_on: sdc2_cmd_on {
+		config {
+			pins = "sdc2_cmd";
+			bias-pull-up;		/* pull up */
+			drive-strength = <10>;	/* 16 MA */
+		};
+	};
+
+	sdc2_data_on: sdc2_data_on {
+		config {
+			pins = "sdc2_data";
+			bias-pull-up;		/* pull up */
+			drive-strength = <10>;	/* 16 MA */
+		};
+	};
+
+};
+
+&sdhc_2 {
+	qcom,clk-rates = <400000 20000000 25000000 50000000 100000000>;
+	qcom,bus-speed-mode = "SDR12", "SDR25", "SDR50";
+
+	/* For reworked boards fly-wired to DISP_BL_RST_N */
+	cd-gpios = <&tlmm 94 0x1>;
+};
+
+&mdss_dsi0 {
+	qcom,dsi-pref-prim-pan = <&mot_smd_546_QHD_p_cmd_v0>;
+};
