@@ -1,0 +1,65 @@
+/* Copyright (c) 2016, Motorola Mobility Inc. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+
+/ {
+	qcom,board-id = <0x42 0xA100>;
+};
+
+&soc {
+	sound {
+		qcom,audio-routing =
+			"IN1AL", "MICBIAS1A",
+			"IN2L",  "MICBIAS1A",
+			"IN2L",  "GPSW",
+			"IN2R",  "MICBIAS1B",
+			"IN1BR", "MICBIAS2A";
+	};
+
+	vdd10_anx {
+		status = "disabled";
+	};
+};
+
+&pm8998_l25 {
+	regulator-min-microvolt = <3312000>;
+	regulator-max-microvolt = <3312000>;
+	qcom,init-voltage = <3312000>;
+};
+
+&tlmm {
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
+};
+
+&i2c_7 {
+	analogix_anx78e6@72 {
+		analogix,vdd_33-supply = <&pm8998_l25>;
+		analogix,vdd_10-supply = <&pm8998_l3>;
+	};
+};
+
+&cci {
+	/* OV5695 OTP */
+	qcom,eeprom@1 {
+		cam_vdig-supply = <&pm8998_l26>;
+		qcom,cam-vreg-min-voltage = <0 1200000>;
+		qcom,cam-vreg-max-voltage = <0 1200000>;
+	};
+
+	/* OV5695 */
+	qcom,camera@1 {
+		cam_vdig-supply = <&pm8998_l26>;
+		qcom,cam-vreg-min-voltage = <0 1200000>;
+		qcom,cam-vreg-max-voltage = <0 1200000>;
+	};
+};
