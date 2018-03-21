@@ -399,6 +399,15 @@ int smblib_set_usb_suspend(struct smb_charger *chg, bool suspend)
 		}
 	}
 
+	if (chg->single_path_usbin_switch) {
+		if (suspend) {
+			pr_info("PMI: %s usb suspend when eb sink, toggle usb_en pol\n", __func__);
+			mmi_set_usb_en_polarity(chg, USB_EN_ACTIVE_HIGH);
+		} else {
+			mmi_set_usb_en_polarity(chg, USB_EN_ACTIVE_LOW);
+		}
+	}
+
 	return rc;
 }
 
@@ -4397,6 +4406,51 @@ int smblib_set_prop_pr_swap_in_progress(struct smb_charger *chg,
 /***************
  * Work Queues *
  ***************/
+#define MAX_INPUT_PWR_UW 18000000
+static void smblib_pd_contract_work(struct work_struct *work)
+{
+	struct smb_charger *chg = container_of(work, struct smb_charger,
+					       pd_contract_work.work);
+	int rc, max_ua;
+
+	if (!chg->pd) {
+		chg->pd = devm_usbpd_get_by_phandle(chg->dev,
+						    "qcom,usbpd-phandle");
+		if (IS_ERR_OR_NULL(chg->pd)) {
+			pr_err("Error getting the pd phandle %ld\n",
+				PTR_ERR(chg->pd));
+			chg->pd = NULL;
+		}
+	}
+	if (!chg->pd || !chg->pd_active)
+		return;
+
+	chg->pd_contract_uv = usbpd_select_pdo_match(chg->pd);
+
+	if (chg->pd_contract_uv == -ENOTSUPP)
+		return;
+
+	if (chg->pd_contract_uv <= 0) {
+		schedule_delayed_work(&chg->pd_contract_work,
+				      msecs_to_jiffies(100));
+		return;
+	}
+
+	if (chg->pd_contract_uv >= MICRO_9V)
+		smblib_set_opt_freq_buck(chg, chg->chg_freq.freq_9V);
+	else
+		smblib_set_opt_freq_buck(chg, chg->chg_freq.freq_5V);
+
+	max_ua = (MAX_INPUT_PWR_UW / (chg->pd_contract_uv / 1000)) * 1000;
+	smblib_dbg(chg, PR_MISC, "smblib_pd_contract_work: %d uV, %d uA\n",
+		   chg->pd_contract_uv, max_ua);
+
+	rc = vote(chg->usb_icl_votable, ICL_LIMIT_VOTER, true, max_ua);
+	if (rc < 0)
+		smblib_err(chg, "Error setting %d uA rc=%d\n", max_ua, rc);
+
+}
+
 static void smblib_uusb_otg_work(struct work_struct *work)
 {
 	struct smb_charger *chg = container_of(work, struct smb_charger,
