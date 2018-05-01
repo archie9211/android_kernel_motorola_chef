@@ -166,6 +166,7 @@
 struct wm_adsp_buf {
 	struct list_head list;
 	void *buf;
+	size_t len;
 };
 
 static struct wm_adsp_buf *wm_adsp_buf_alloc(const void *src, size_t len,
@@ -175,14 +176,17 @@ static struct wm_adsp_buf *wm_adsp_buf_alloc(const void *src, size_t len,
 
 	if (buf == NULL)
 		return NULL;
-
-	buf->buf = vmalloc(len);
+	if (src != NULL)
+		buf->buf = kmemdup(src, len, GFP_KERNEL | GFP_DMA);
+	else
+		buf->buf = kzalloc(len, GFP_KERNEL | GFP_DMA);
 	if (!buf->buf) {
 		vfree(buf);
 		return NULL;
 	}
 	memcpy(buf->buf, src, len);
 
+	buf->len = len;
 	if (list)
 		list_add_tail(&buf->list, list);
 
@@ -202,6 +206,33 @@ static void wm_adsp_buf_free(struct list_head *list)
 }
 
 #define WM_ADSP_NUM_FW 4
+static void wm_adsp_buf_flash(struct list_head *list, void *dest)
+{
+	int offset = 0;
+
+	while (!list_empty(list)) {
+		struct wm_adsp_buf *buf = list_first_entry(list,
+							   struct wm_adsp_buf,
+							   list);
+		memcpy(dest + offset, buf->buf, buf->len);
+		offset += buf->len;
+		list_del(&buf->list);
+		kfree(buf->buf);
+		kfree(buf);
+	}
+}
+
+#define WM_ADSP_FW_MBC_VSS  0
+#define WM_ADSP_FW_HIFI     1
+#define WM_ADSP_FW_TX       2
+#define WM_ADSP_FW_TX_SPK   3
+#define WM_ADSP_FW_RX       4
+#define WM_ADSP_FW_RX_ANC   5
+#define WM_ADSP_FW_CTRL     6
+#define WM_ADSP_FW_ASR      7
+#define WM_ADSP_FW_TRACE    8
+#define WM_ADSP_FW_SPK_PROT 9
+#define WM_ADSP_FW_MISC     10
 
 #define WM_ADSP_FW_MBC_VSS 0
 #define WM_ADSP_FW_TX      1
@@ -608,12 +639,26 @@ static int wm_coeff_put(struct snd_kcontrol *kcontrol,
 static int wm_coeff_read_control(struct wm_coeff_ctl *ctl,
 				 void *buf, size_t len)
 {
+	LIST_HEAD(buf_list);
 	struct wm_adsp_alg_region *alg_region = &ctl->alg_region;
 	const struct wm_adsp_region *mem;
 	struct wm_adsp *dsp = ctl->dsp;
-	void *scratch;
+	struct wm_adsp_buf *scratch;
 	int ret;
 	unsigned int reg;
+	int read_len = 0;
+	size_t toread_len;
+	unsigned int addr_div;
+
+	switch (dsp->type) {
+	case WMFW_ADSP1:
+	case WMFW_ADSP2:
+		addr_div = 2;
+		break;
+	default:
+		addr_div = 1;
+		break;
+	}
 
 	mem = wm_adsp_find_region(dsp, alg_region->type);
 	if (!mem) {
@@ -640,7 +685,32 @@ static int wm_coeff_read_control(struct wm_coeff_ctl *ctl,
 
 	memcpy(buf, scratch, ctl->len);
 	kfree(scratch);
+	while ((len - read_len) > 0) {
+		toread_len = (len - read_len) > PAGE_SIZE ?
+			PAGE_SIZE : (len - read_len);
 
+		scratch = wm_adsp_buf_alloc(NULL, toread_len, &buf_list);
+		if (!scratch) {
+			adsp_err(dsp, "Out of memory\n");
+			wm_adsp_buf_free(&buf_list);
+			return -ENOMEM;
+		}
+
+		regmap_raw_read(dsp->regmap, reg + read_len / addr_div,
+				scratch->buf, toread_len);
+		if (ret) {
+			adsp_err(dsp, "Failed to read %zu bytes from %x: %d\n",
+				 toread_len,
+				 reg + read_len / addr_div, ret);
+			wm_adsp_buf_free(&buf_list);
+			return ret;
+		}
+		adsp_dbg(dsp, "Read %zu bytes from %x\n", toread_len,
+			 reg + read_len / addr_div);
+		read_len += toread_len;
+	}
+
+	wm_adsp_buf_flash(&buf_list, buf);
 	return 0;
 }
 
