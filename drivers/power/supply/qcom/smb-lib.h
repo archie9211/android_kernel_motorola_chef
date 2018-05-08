@@ -240,6 +240,139 @@ struct reg_info {
 	const char	*desc;
 };
 
+struct mmi_temp_zone {
+	int		temp_c;
+	int		norm_mv;
+	int		fcc_max_ma;
+	int		fcc_norm_ma;
+};
+
+#define MAX_NUM_STEPS 10
+enum mmi_temp_zones {
+	ZONE_FIRST = 0,
+	/* states 0-9 are reserved for zones */
+	ZONE_LAST = MAX_NUM_STEPS + ZONE_FIRST - 1,
+	ZONE_HOT,
+	ZONE_COLD,
+	ZONE_NONE = 0xFF,
+};
+
+enum mmi_chrg_step {
+	STEP_MAX,
+	STEP_NORM,
+	STEP_EB,
+	STEP_FULL,
+	STEP_FLOAT,
+	STEP_DEMO,
+	STEP_STOP,
+	STEP_NONE = 0xFF,
+};
+
+enum ebchg_state {
+	EB_DISCONN = POWER_SUPPLY_EXTERN_STATE_DIS,
+	EB_SINK = POWER_SUPPLY_EXTERN_STATE_SINK,
+	EB_SRC = POWER_SUPPLY_EXTERN_STATE_SRC,
+	EB_OFF = POWER_SUPPLY_EXTERN_STATE_OFF,
+};
+
+enum charging_limit_modes {
+	CHARGING_LIMIT_OFF,
+	CHARGING_LIMIT_RUN,
+	CHARGING_LIMIT_UNKNOWN,
+};
+
+enum turbo_ebsrc {
+	TURBO_EBSRC_UNKNOWN,
+	TURBO_EBSRC_NOT_SUPPORTED,
+	TURBO_EBSRC_VALID,
+};
+
+enum usb_en_pol {
+	USB_EN_ACTIVE_HIGH = 0,
+	USB_EN_ACTIVE_LOW,
+};
+
+struct mmi_params {
+	bool			factory_mode;
+	int			demo_mode;
+	struct gpio		warn_gpio;
+	struct gpio		togl_rst_gpio;
+	struct gpio		ebchg_gpio;
+	struct delayed_work	warn_irq_work;
+	int			warn_irq;
+	struct notifier_block	smb_reboot;
+	/* thermal mitigation */
+	int			dc_system_temp_level;
+	int			dc_thermal_levels;
+	int			*dc_thermal_mitigation;
+	int			usb_system_temp_level;
+	int			usb_thermal_levels;
+	int			*usb_thermal_mitigation;
+	bool			factory_kill_armed;
+
+	/* Charge Profile */
+	int			num_temp_zones;
+	struct mmi_temp_zone	*temp_zones;
+	enum mmi_temp_zones	pres_temp_zone;
+	enum mmi_chrg_step	pres_chrg_step;
+	int			chrg_taper_cnt;
+	int			dc_ebmax_current_ma;
+	int			dc_eff_current_ma;
+	/* external battery params */
+	const char		*eb_batt_psy_name;
+	const char		*eb_pwr_psy_name;
+	enum ebchg_state	ebchg_state;
+	bool			force_eb_chrg;
+	int			update_eb_params;
+	int			charger_debounce_cnt;
+	int			cl_ebchg;
+	int			cl_ebsrc;
+	int			vl_ebsrc;
+	int			vo_ebsrc;
+	int			vi_ebsrc;
+	bool			eb_rechrg;
+	bool			usbeb_present;
+	bool			wls_present;
+	int			temp_state;
+	int			chrg_iterm;
+	atomic_t		hb_ready;
+	struct alarm		heartbeat_alarm;
+	struct delayed_work	heartbeat_work;
+	struct delayed_work	typec_debounce_work;
+	struct power_supply	*wls_psy;
+	struct power_supply	*usbeb_psy;
+	struct pinctrl		*smb_pinctrl;
+	struct wakeup_source	smblib_mmi_hb_wake_source;
+	bool			apsd_done;
+	int			charger_rate;
+	bool			hvdcp3_con;
+	struct notifier_block	mmi_psy_notifier;
+	bool			init_done;
+	int			vbus_inc_cnt;
+	bool			enable_charging_limit;
+	bool			is_factory_image;
+	enum charging_limit_modes	charging_limit_modes;
+	int			upper_limit_capacity;
+	int			lower_limit_capacity;
+	int			base_fv_mv;
+	int			vfloat_comp_mv;
+	enum turbo_ebsrc	turbo_pwr_ebsrc;
+	bool			check_ebsrc_vl;
+	int			batt_health;
+	int			max_chrg_temp;
+	int			typec_debounce_result;
+	int			typec_debounce_cnt;
+	int			typec_debounce_pre_cnt;
+	int			typec_delay_cnt;
+	const char		*inner_wls_name;
+	bool			inner_wls_used;
+	int			inner_wls_vmax;
+	int			inner_wls_imax;
+	struct gpio		wls_otg_gpio;
+	struct pinctrl		*wls_otg_pinctrl;
+	bool			force_chg_suspend;
+};
+
 struct smb_charger {
 	struct device		*dev;
 	char			*name;
