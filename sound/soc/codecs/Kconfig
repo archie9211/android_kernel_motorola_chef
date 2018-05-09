@@ -45,6 +45,8 @@ config SND_SOC_ALL_CODECS
 	select SND_SOC_ALC5632 if I2C
 	select SND_SOC_CQ0093VC if MFD_DAVINCI_VOICECODEC
 	select SND_SOC_CS35L32 if I2C
+	select SND_SOC_CS35L41_SPI if SPI_MASTER
+	select SND_SOC_CS35L41_I2C if I2C
 	select SND_SOC_CS42L51_I2C if I2C
 	select SND_SOC_CS42L52 if I2C && INPUT
 	select SND_SOC_CS42L56 if I2C && INPUT
@@ -355,6 +357,41 @@ config SND_SOC_CQ0093VC
 config SND_SOC_CS35L32
 	tristate "Cirrus Logic CS35L32 CODEC"
 	depends on I2C
+
+config SND_SOC_CS35L34
+	tristate "Cirrus Logic CS35L34"
+	depends on I2C
+
+config SND_SOC_CS35L35
+	tristate "Cirrus Logic CS35L35"
+	depends on I2C
+
+config SND_SOC_CS35L36
+	tristate "Cirrus Logic CS35L36"
+	depends on I2C
+
+config SND_SOC_CS35L36_TRIMMED
+	tristate "Support for Properly trimmed parts for A0 and B0"
+	depends on SND_SOC_CS35L36
+	help
+	  Say Y here if you have properly trimmed A0 and B0 parts
+	  to allow OPT errata workarounds.
+
+config SND_SOC_CS35L41
+	tristate
+	select SND_SOC_WM_ADSP
+
+config SND_SOC_CS35L41_SPI
+	tristate "Cirrus Logic CS35L41 CODEC (SPI)"
+	depends on SPI_MASTER
+	select SND_SOC_CS35L41
+	select REGMAP_SPI
+
+config SND_SOC_CS35L41_I2C
+	tristate "Cirrus Logic CS35L41 CODEC (I2C)"
+	depends on I2C
+	select SND_SOC_CS35L41
+	select REGMAP_I2C
 
 config SND_SOC_CS42L51
 	tristate
