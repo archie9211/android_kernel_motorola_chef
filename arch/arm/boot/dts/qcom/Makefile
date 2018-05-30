@@ -49,8 +49,9 @@ msm8996-mtp-overlay.dtbo-base :=  msm8996pro-v1.1-pmi8996.dtb \
 				msm8996-v313-pmi8994.dtb \
 				msm8996-v30-pm8994-pmi8994-pm8004.dtb
 
-msm8996-cdp-overlay.dtbo-base :=  msm8996-v3-pmi8994.dtb \
-				 msm8996pro-pmi8994-pm8004.dtb
+ifeq ($(CONFIG_LAKE_DTB),y)
+dtb-$(CONFIG_ARCH_SDM636) += sdm636-lake-evt1.dtb
+endif #CONFIG_LAKE_DTB
 
 ifeq ($(CONFIG_CHEF_DTB),y)
 dtb-$(CONFIG_ARCH_SDM636) += sdm636-chef-evt.dtb
