@@ -101,7 +101,6 @@ struct wm_adsp_fw_defs {
 	struct wm_adsp_compr_buf *buffer[WM_ADSP_MAX_CHANNEL_PER_DSP];
 
 	struct mutex pwr_lock;
-	struct mutex *fw_lock;
 
 	unsigned int lock_regions;
 	bool unlock_all;
@@ -161,6 +160,7 @@ extern const struct snd_kcontrol_new wm_adsp_fw_controls[];
 
 int wm_adsp1_init(struct wm_adsp *dsp);
 int wm_adsp2_init(struct wm_adsp *dsp);
+void wm_adsp2_remove(struct wm_adsp *dsp);
 int wm_adsp2_codec_probe(struct wm_adsp *dsp, struct snd_soc_codec *codec);
 int wm_adsp2_codec_remove(struct wm_adsp *dsp, struct snd_soc_codec *codec);
 int wm_halo_init(struct wm_adsp *dsp);
