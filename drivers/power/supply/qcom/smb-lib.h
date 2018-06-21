@@ -73,6 +73,12 @@ enum print_reason {
 #define OTG_MAX_ATTEMPTS	3
 #define BOOST_BACK_STORM_COUNT	3
 #define WEAK_CHG_STORM_COUNT	8
+#define HEARTBEAT_VOTER			"HEARTBEAT_VOTER"
+#define EB_VOTER			"EB_VOTER"
+#define WIRELESS_VOTER			"WIRELESS_VOTER"
+#define DEMO_VOTER			"DEMO_VOTER"
+#define OTG_VOTER			"OTG_VOTER"
+#define MMI_VOTER			"MMI_VOTER"
 
 enum smb_mode {
 	PARALLEL_MASTER = 0,
