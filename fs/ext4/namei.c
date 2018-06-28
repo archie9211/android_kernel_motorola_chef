@@ -1563,7 +1563,7 @@ static struct dentry *ext4_lookup(struct inode *dir, struct dentry *dentry, unsi
 	struct ext4_dir_entry_2 *de;
 	struct buffer_head *bh;
 
-       if (ext4_encrypted_inode(dir)) {
+	if (ext4_encrypted_inode(dir)) {
                int res = ext4_get_encryption_info(dir);
 
 		/*
@@ -1614,9 +1614,11 @@ static struct dentry *ext4_lookup(struct inode *dir, struct dentry *dentry, unsi
 								  inode)) {
 			iput(inode);
 			ext4_warning(inode->i_sb,
-				     "Inconsistent encryption contexts: %lu/%lu\n",
+				     "Inconsistent encryption contexts: %lu/%lu %s\n",
 				     (unsigned long) dir->i_ino,
-				     (unsigned long) inode->i_ino);
+				     (unsigned long) inode->i_ino, dentry->d_name.name);
+			iput(inode);
+			WARN_ON("Inconsistent encryption contexts");
 			return ERR_PTR(-EPERM);
 		}
 	}
