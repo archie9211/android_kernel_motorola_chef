@@ -49,6 +49,12 @@
 #define adsp_dbg(_dsp, fmt, ...) \
 	dev_dbg(_dsp->dev, "DSP%d: " fmt, _dsp->num, ##__VA_ARGS__)
 
+/*
+ * Max I2C transfer size on Qcom platform, 3840 bytes (15 buffers * 256b)
+ */
+
+#define MAX_I2C_TX_SIZE                   0xf00
+
 #define ADSP1_CONTROL_1                   0x00
 #define ADSP1_CONTROL_2                   0x02
 #define ADSP1_CONTROL_3                   0x03
@@ -1340,8 +1346,8 @@ static int wm_coeff_read_control(struct wm_coeff_ctl *ctl,
 	memcpy(buf, scratch, ctl->len);
 	kfree(scratch);
 	while ((len - read_len) > 0) {
-		toread_len = (len - read_len) > PAGE_SIZE ?
-			PAGE_SIZE : (len - read_len);
+		toread_len = (len - read_len) > MAX_I2C_TX_SIZE ?
+			MAX_I2C_TX_SIZE : (len - read_len);
 
 		scratch = wm_adsp_buf_alloc(NULL, toread_len, &buf_list);
 		if (!scratch) {
@@ -1934,7 +1940,7 @@ static int wm_adsp_write_blocks(struct wm_adsp *dsp, const u8 *data, size_t len,
 				size_t burst_multiple)
 
 {
-	size_t to_write = PAGE_SIZE - (PAGE_SIZE % burst_multiple);
+	size_t to_write = MAX_I2C_TX_SIZE - (MAX_I2C_TX_SIZE % burst_multiple);
 	size_t remain = len;
 	struct wm_adsp_buf *buf;
 	unsigned int addr_div;
