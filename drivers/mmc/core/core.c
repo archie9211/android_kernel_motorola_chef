@@ -1891,9 +1891,10 @@ EXPORT_SYMBOL(mmc_start_req);
  */
 void mmc_wait_for_req(struct mmc_host *host, struct mmc_request *mrq)
 {
+#ifdef CONFIG_MMC_BLOCK_DEFERRED_RESUME
 	if (mmc_bus_needs_resume(host))
 		mmc_resume_bus(host);
-
+#endif
 	__mmc_start_req(host, mrq);
 	mmc_wait_for_req_done(host, mrq);
 }
@@ -2329,9 +2330,10 @@ void mmc_get_card(struct mmc_card *card)
 {
 	pm_runtime_get_sync(&card->dev);
 	mmc_claim_host(card->host);
-
+#ifdef CONFIG_MMC_BLOCK_DEFERRED_RESUME
 	if (mmc_bus_needs_resume(card->host))
 		mmc_resume_bus(card->host);
+#endif
 }
 EXPORT_SYMBOL(mmc_get_card);
 
@@ -3287,7 +3289,6 @@ int mmc_resume_bus(struct mmc_host *host)
 {
 	unsigned long flags;
 	int err = 0;
-	int card_present = true;
 
 	if (!mmc_bus_needs_resume(host))
 		return -EINVAL;
@@ -3298,10 +3299,7 @@ int mmc_resume_bus(struct mmc_host *host)
 	spin_unlock_irqrestore(&host->lock, flags);
 
 	mmc_bus_get(host);
-	if (host->ops->get_cd)
-		card_present = host->ops->get_cd(host);
-
-	if (host->bus_ops && !host->bus_dead && host->card && card_present) {
+	if (host->bus_ops && !host->bus_dead && host->card) {
 		mmc_power_up(host, host->card->ocr);
 		BUG_ON(!host->bus_ops->resume);
 		err = host->bus_ops->resume(host);
@@ -4537,7 +4535,7 @@ int mmc_pm_notify(struct notifier_block *notify_block,
 	struct mmc_host *host = container_of(
 		notify_block, struct mmc_host, pm_notify);
 	unsigned long flags;
-	int err = 0, present = 0;
+	int err = 0;
 
 	switch (mode) {
 	case PM_RESTORE_PREPARE:
@@ -4588,8 +4586,7 @@ int mmc_pm_notify(struct notifier_block *notify_block,
 			present = !!mmc_gpio_get_cd(host);
 
 		if (mmc_bus_manual_resume(host) &&
-				!host->ignore_bus_resume_flags &&
-				present) {
+				!host->ignore_bus_resume_flags) {
 			spin_unlock_irqrestore(&host->lock, flags);
 			break;
 		}
