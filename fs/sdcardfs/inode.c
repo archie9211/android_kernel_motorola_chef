@@ -790,6 +790,121 @@ out:
 	return err;
 }
 
+static int sdcardfs_setxattr(struct dentry *dentry, const char *name,
+	const void *value, size_t size, int flags)
+{
+	int err;
+	struct dentry *lower_dentry;
+	struct inode *inode = d_inode(dentry);
+	struct inode *lower_inode;
+	struct path lower_path;
+	const struct cred *saved_cred = NULL;
+
+	/* save current_cred and override it */
+	OVERRIDE_CRED(SDCARDFS_SB(dentry->d_sb), saved_cred, SDCARDFS_I(inode));
+	sdcardfs_get_lower_path(dentry, &lower_path);
+
+	lower_dentry = lower_path.dentry;
+	lower_inode = sdcardfs_lower_inode(inode);
+	err = vfs_setxattr(lower_dentry, name, value, size, flags);
+
+	sdcardfs_put_lower_path(dentry, &lower_path);
+	REVERT_CRED(saved_cred);
+	return err;
+}
+
+static ssize_t sdcardfs_getxattr(struct dentry *dentry, const char *name,
+	void *value, size_t size)
+{
+	int err;
+	struct dentry *lower_dentry;
+	struct inode *inode = d_inode(dentry);
+	struct inode *lower_inode;
+	struct path lower_path;
+	const struct cred *saved_cred = NULL;
+
+	/* save current_cred and override it */
+	OVERRIDE_CRED(SDCARDFS_SB(dentry->d_sb), saved_cred, SDCARDFS_I(inode));
+	sdcardfs_get_lower_path(dentry, &lower_path);
+
+	lower_dentry = lower_path.dentry;
+	lower_inode = sdcardfs_lower_inode(inode);
+	err = vfs_getxattr(lower_dentry, name, value, size);
+
+	sdcardfs_put_lower_path(dentry, &lower_path);
+	REVERT_CRED(saved_cred);
+	return err;
+}
+
+#ifdef CONFIG_SDCARD_FS_PARTIAL_RELATIME
+void sdcardfs_update_relatime_flag(struct file *lower_file,
+	struct inode *lower_inode, uid_t writer_uid)
+{
+	char xattr_val[64];
+	const char *dir_name[2];
+	char *xexcept = NULL, *xpath;
+	int xlen, i, depth = 0;
+	struct dentry *dentry, *parent, *child = NULL;
+	const char *xattr_name = SDCARDFS_XATTR_PARTIAL_RELATIME_NAME;
+	__u32 flags = 0;
+	appid_t app_id = uid_is_app(writer_uid) ?
+		writer_uid % AID_USER_OFFSET : 0;
+
+	dentry = lower_file->f_path.dentry;
+	if (IS_ERR_OR_NULL(dentry) || S_ISDIR(d_inode(dentry)->i_mode))
+		return;
+
+	while (app_id) {
+		parent = dget_parent(dentry);
+		xlen = vfs_getxattr(parent, xattr_name, (void *)xattr_val,
+			sizeof(xattr_val));
+		if (xlen > 0 && xattr_val[0] != '0') {
+			dput(parent);
+			xattr_val[xlen] = 0;
+			for (i = 0; i < xlen; i++) {
+				if (xattr_val[i] != ':')
+					continue;
+				xattr_val[i] = 0;
+				xexcept = &xattr_val[i + 1];
+				break;
+			}
+			xpath = i ? &xattr_val[0] : NULL;
+			if (!xexcept || !xpath) {
+				depth = -1;
+				break;
+			}
+
+			if (app_id == get_appid(xexcept))
+				break;
+
+			dir_name[0] = dentry->d_name.name;
+			if (child)
+				dir_name[1] = child->d_name.name;
+			depth = wildcard_path_match(xpath, dir_name,
+				child ? 2 : 1);
+			if (depth > 0)
+				flags = S_RELATIME;
+			break;
+		} else if (IS_ROOT(parent)) {
+			dput(parent);
+			break;
+		}
+		child = dentry;
+		dentry = parent;
+		dput(parent);
+	}
+
+	if (depth > 2 || depth < 0)
+		pr_warn("sdcardfs: %lu %s: invalid format\n",
+			d_inode(parent)->i_ino, xattr_name);
+
+	spin_lock(&lower_inode->i_lock);
+	lower_inode->i_flags &= ~S_RELATIME;
+	lower_inode->i_flags |= flags;
+	spin_unlock(&lower_inode->i_lock);
+}
+#endif
+
 const struct inode_operations sdcardfs_symlink_iops = {
 	.permission2	= sdcardfs_permission,
 	.setattr2	= sdcardfs_setattr,
