@@ -321,7 +321,7 @@ static int sdcardfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode
 		((pd->perm == PERM_ANDROID)
 				&& (qstr_case_eq(&dentry->d_name, &q_data)))) {
 		revert_fsids(saved_cred);
-		saved_cred = override_fsids(sbi,
+		saved_cred = override_fsids(SDCARDFS_SB(dir->i_sb),
 					SDCARDFS_I(d_inode(dentry))->data);
 		if (!saved_cred) {
 			pr_err("sdcardfs: failed to set up .nomedia in %s: %d\n",
@@ -335,6 +335,7 @@ static int sdcardfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode
 			pr_err("sdcardfs: failed to create .nomedia in %s: %d\n",
 						lower_path.dentry->d_name.name,
 						touch_err);
+
 			goto out;
 		}
 	}
@@ -879,7 +880,11 @@ static int sdcardfs_setxattr(struct dentry *dentry, const char *name,
 	const struct cred *saved_cred = NULL;
 
 	/* save current_cred and override it */
-	OVERRIDE_CRED(SDCARDFS_SB(dentry->d_sb), saved_cred, SDCARDFS_I(inode));
+	saved_cred = override_fsids(SDCARDFS_SB(dentry->d_sb),
+						SDCARDFS_I(inode)->data);
+	if (!saved_cred)
+		return -ENOMEM;
+
 	sdcardfs_get_lower_path(dentry, &lower_path);
 
 	lower_dentry = lower_path.dentry;
@@ -887,7 +892,7 @@ static int sdcardfs_setxattr(struct dentry *dentry, const char *name,
 	err = vfs_setxattr(lower_dentry, name, value, size, flags);
 
 	sdcardfs_put_lower_path(dentry, &lower_path);
-	REVERT_CRED(saved_cred);
+	revert_fsids(saved_cred);
 	return err;
 }
 
@@ -902,7 +907,11 @@ static ssize_t sdcardfs_getxattr(struct dentry *dentry, const char *name,
 	const struct cred *saved_cred = NULL;
 
 	/* save current_cred and override it */
-	OVERRIDE_CRED(SDCARDFS_SB(dentry->d_sb), saved_cred, SDCARDFS_I(inode));
+	saved_cred = override_fsids(SDCARDFS_SB(dentry->d_sb),
+						SDCARDFS_I(inode)->data);
+	if (!saved_cred)
+		return -ENOMEM;
+
 	sdcardfs_get_lower_path(dentry, &lower_path);
 
 	lower_dentry = lower_path.dentry;
@@ -910,7 +919,7 @@ static ssize_t sdcardfs_getxattr(struct dentry *dentry, const char *name,
 	err = vfs_getxattr(lower_dentry, name, value, size);
 
 	sdcardfs_put_lower_path(dentry, &lower_path);
-	REVERT_CRED(saved_cred);
+	revert_fsids(saved_cred);
 	return err;
 }
 
@@ -1007,13 +1016,6 @@ const struct inode_operations sdcardfs_dir_iops = {
 	.setattr2	= sdcardfs_setattr,
 	.setxattr	= sdcardfs_setxattr,
 	.getxattr	= sdcardfs_getxattr,
-	/* XXX Following operations are implemented,
-	 *     but FUSE(sdcard) or FAT does not support them
-	 *     These methods are *NOT* perfectly tested.
-	.symlink	= sdcardfs_symlink,
-	.link		= sdcardfs_link,
-	.mknod		= sdcardfs_mknod,
-	 */
 };
 
 const struct inode_operations sdcardfs_main_iops = {
