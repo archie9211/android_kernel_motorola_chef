@@ -879,7 +879,7 @@
 
 	pm660_bcl: qcom,bcl {
 		compatible = "qcom,bcl";
-		qcom,bcl-enable;
+/*		qcom,bcl-enable; */
 		qcom,bcl-framework-interface;
 		qcom,bcl-hotplug-list = <&CPU6 &CPU7>;
 		qcom,bcl-soc-hotplug-list = <&CPU4 &CPU5 &CPU6 &CPU7>;
