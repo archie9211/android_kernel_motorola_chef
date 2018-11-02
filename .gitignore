@@ -113,4 +113,10 @@ all.config
 # Kdevelop4
 *.kdev4
 
+anykernel/
+build.sh
+ccache-chef/
+oldReleases/
+out/
+
 tests
