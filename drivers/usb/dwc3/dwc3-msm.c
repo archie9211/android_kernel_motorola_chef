@@ -278,6 +278,19 @@ struct dwc3_msm {
 	enum usb_device_speed override_usb_speed;
 
 	bool core_init_failed;
+	bool			ext_typec_switch;
+	bool                    ss_compliance;
+	struct gpio		mod_switch_gpio;
+	struct i2c_client	*mod_hub;
+	bool			mods_support;
+	bool			mod_enabled; /* Sysfs control of mod intf */
+	enum modusb_protocol	mod_proto;   /* Sysfs control of mod intf */
+	bool			mod_ss_path;
+	struct notifier_block   usbext_nb;
+	struct usb_ext_status   ext_state;   /* Greybus control of mod intf */
+	bool			ext_enabled; /* Greybus control of mod intf */
+	struct work_struct	ext_usb_work;
+	bool			ext_usb_run;
 };
 
 static struct dwc3_msm *the_chip;
@@ -518,6 +531,13 @@ static void dwc3_ext_usb_enable(struct dwc3_msm *mdwc, bool enable)
 {
 	struct dwc3 *dwc = platform_get_drvdata(mdwc->dwc3);
 
+	if (atomic_read(&mdwc->pm_suspended)) {
+		pr_err("%s: Attempting to Run while Suspended!\n", __func__);
+		mdwc->ext_usb_run = true;
+		return;
+	}
+
+	mdwc->ext_usb_run = false;
 	pr_err("%s: ext_enabled %d enable %d\n", __func__,
 	       mdwc->ext_enabled ? 1 : 0, enable ? 1 : 0);
 
@@ -4823,6 +4843,11 @@ static int dwc3_msm_pm_restore(struct device *dev)
 		}
 
 		usb_phy_notify_connect(mdwc->hs_phy, USB_SPEED_HIGH);
+	}
+
+	if (mdwc->ext_usb_run) {
+		mdwc->ext_usb_run = false;
+		schedule_work(&mdwc->ext_usb_work);
 	}
 
 	return 0;
