@@ -10,6 +10,7 @@
  * GNU General Public License for more details.
  */
 
+#include <linux/fastchg.h>
 #include <linux/device.h>
 #include <linux/regmap.h>
 #include <linux/delay.h>
@@ -33,8 +34,8 @@
 #include "storm-watch.h"
 
 #ifdef QCOM_BASE
+
 #ifdef CONFIG_FORCE_FAST_CHARGE
-#include <linux/fastchg.h>
 #endif
 
 #define smblib_err(chg, fmt, ...)		\
