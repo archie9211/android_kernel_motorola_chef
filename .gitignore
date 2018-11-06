@@ -118,5 +118,7 @@ build.sh
 ccache-chef/
 oldReleases/
 out/
-
+linux-stable.sh
 tests
+.gitignore
+
