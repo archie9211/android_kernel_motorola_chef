@@ -2703,7 +2703,7 @@ int hdd_priv_get_data(struct iw_point *p_priv_data, union iwreq_data *wrqu)
 		return -EINVAL;
 
 #ifdef CONFIG_COMPAT
-	if (in_compat_syscall()) {
+	if (is_compat_task()) {
 		struct compat_iw_point *p_compat_priv_data;
 
 		/* Compat task:
@@ -9870,7 +9870,7 @@ static int __iw_setnone_getnone(struct net_device *dev,
 	 * compat support in the kernel does not handle this case.  so we
 	 * need to explicitly handle it here.
 	 */
-	if (in_compat_syscall()) {
+	if (is_compat_task()) {
 		struct compat_iw_point *compat_iw_point =
 			(struct compat_iw_point *)&wrqu->data;
 		sub_cmd = compat_iw_point->flags;
