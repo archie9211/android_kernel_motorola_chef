@@ -2681,7 +2681,7 @@ ol_txrx_vdev_detach(ol_txrx_vdev_handle vdev,
 	 * to avoid crash.
 	 *
 	 */
-	ol_txrx_tx_desc_reset_vdev(vdev);
+	//ol_txrx_tx_desc_reset_vdev(vdev);
 
 	/*
 	 * Doesn't matter if there are outstanding tx frames -
@@ -3672,7 +3672,7 @@ int ol_txrx_peer_unref_delete(ol_txrx_peer_handle peer,
 				 * and add vdev checking in the ol_tx_desc_free
 				 * to avoid crash.
 				 */
-				ol_txrx_tx_desc_reset_vdev(vdev);
+				//ol_txrx_tx_desc_reset_vdev(vdev);
 				ol_txrx_dbg(
 					"%s: deleting vdev object %pK (%02x:%02x:%02x:%02x:%02x:%02x) - its last peer is done",
 					__func__, vdev,
