@@ -22,6 +22,7 @@
 #include "mdss_mdp_trace.h"
 #include "mdss_dsi_clk.h"
 #include <linux/interrupt.h>
+#include "mdss_dropbox.h"
 
 #define MAX_RECOVERY_TRIALS 10
 #define MAX_SESSIONS 2
