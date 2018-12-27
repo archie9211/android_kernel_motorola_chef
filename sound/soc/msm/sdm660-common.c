@@ -30,7 +30,7 @@
 #define PMIC_INT_ANALOG_CODEC "analog-codec"
 
 #define DEV_NAME_STR_LEN  32
-#define DEFAULT_MCLK_RATE 11289600
+#define DEFAULT_MCLK_RATE 24576000
 
 struct dev_config {
 	u32 sample_rate;
