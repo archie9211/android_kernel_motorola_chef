@@ -2029,7 +2029,6 @@ config BUG_ON_DATA_CORRUPTION
 	  for validity.
 
 	  If unsure, say N.
->>>>>>> 241f76b17c3623dcb40911ac7fdc56c35f3095bf
 
 source "samples/Kconfig"
 
