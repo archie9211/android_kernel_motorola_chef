@@ -2020,6 +2020,16 @@ config CC_WERROR
 	 the codebase.
 
 	 If unsure, say N.
+config BUG_ON_DATA_CORRUPTION
+	bool "Trigger a BUG when data corruption is detected"
+	select CONFIG_DEBUG_LIST
+	help
+	  Select this option if the kernel should BUG when it encounters
+	  data corruption in kernel memory structures when they get checked
+	  for validity.
+
+	  If unsure, say N.
+>>>>>>> 241f76b17c3623dcb40911ac7fdc56c35f3095bf
 
 source "samples/Kconfig"
 

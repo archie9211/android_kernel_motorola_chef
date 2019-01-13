@@ -336,7 +336,6 @@ static int sdcardfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode
 			pr_err("sdcardfs: failed to create .nomedia in %s: %d\n",
 						lower_path.dentry->d_name.name,
 						touch_err);
-
 			goto out;
 		}
 	}
