@@ -3441,6 +3441,12 @@ void smblib_usb_plugin_locked(struct smb_charger *chg)
 		rc = smblib_request_dpdm(chg, false);
 		if (rc < 0)
 			smblib_err(chg, "Couldn't disable DPDM rc=%d\n", rc);
+
+		if (chg->mmi.factory_kill_armed && !factory_kill_disable) {
+			smblib_err(chg, "Factory kill power off\n");
+			orderly_poweroff(true);
+		} else
+			chg->mmi.factory_kill_armed = false;
 	}
 
 	if (chg->micro_usb_mode)
