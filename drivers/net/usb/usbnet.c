@@ -366,7 +366,7 @@ void usbnet_update_max_qlen(struct usbnet *dev)
 	switch (speed) {
 	case USB_SPEED_HIGH:
 		dev->rx_qlen = MAX_QUEUE_MEMORY / dev->rx_urb_size;
-		dev->tx_qlen = MAX_QUEUE_MEMORY / dev->hard_mtu;
+		dev->tx_qlen = MAX_QUEUE_MEMORY / dev->hard_mtu / 10;
 		break;
 	case USB_SPEED_SUPER:
 		/*
@@ -375,7 +375,7 @@ void usbnet_update_max_qlen(struct usbnet *dev)
 		 * work well
 		 */
 		dev->rx_qlen = 5 * MAX_QUEUE_MEMORY / dev->rx_urb_size;
-		dev->tx_qlen = 5 * MAX_QUEUE_MEMORY / dev->hard_mtu;
+		dev->tx_qlen = 5 * MAX_QUEUE_MEMORY / dev->hard_mtu / 10;
 		break;
 	default:
 insanity:
