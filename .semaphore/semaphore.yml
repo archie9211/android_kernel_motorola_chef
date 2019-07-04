@@ -1,0 +1,26 @@
+version: v1.0
+name: Dark One Kernel Compile Script
+agent:
+  machine:
+    type: e1-standard-2    # Linux machine type with 2 vCPUs, 4 GB of RAM
+    os_image: ubuntu1804   # The Ubuntu 18.04 OS image.
+blocks:
+  - name: "Create Env"
+    task:
+      secrets:
+        - name: aws-secrets
+      jobs:
+      - name: Final Compile 
+        commands:
+          - sudo apt install curl
+          - sudo curl -o /etc/apt/sources.list https://gist.githubusercontent.com/archie9211/fc4b9fa522bd9b7f04a5e8c8390a3ceb/raw/f8cf59880332d7a0607ee0e1c3130c14ae81a78b/sources.list
+          - sudo apt update
+          - sudo apt install -y bc bash libncurses5-dev git-core gnupg flex bison gperf build-essential zip curl libc6-dev ncurses-dev binfmt-support cmake automake autogen autoconf autotools-dev libtool shtool python m4 gcc clang llvm libtool zlib1g-dev abootimg gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          - git clone https://github.com/adekmaulana/aarch64-linux-android /home/semaphore/linaro
+          - mkdir /home/semaphore/clang
+          - curl -o /home/semaphore/clang/clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/master/clang-r353983d.tar.gz
+          - cd clang && tar xvzf clang.tar.gz && rm clang.tar.gz && cd -
+          - checkout
+          - git clone https://github.com/archie9211/AnyKernel2 anykernel
+          - wget https://gist.githubusercontent.com/archie9211/c16799985803ec75e05b8d80484a3d1b/raw/3a3a33357e41c359204c33f671b7ad9e3cbd090b/build.sh
+          - bash build.sh
