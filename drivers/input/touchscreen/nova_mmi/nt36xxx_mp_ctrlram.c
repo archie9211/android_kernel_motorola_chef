@@ -34,6 +34,8 @@
 #define FREQ_HOP_DISABLE 0x66
 #define FREQ_HOP_ENABLE 0x65
 
+#define PAGESIZE 32
+
 #define SHORT_TEST_CSV_FILE "/data/local/tmp/ShortTest.csv"
 #define OPEN_TEST_CSV_FILE "/data/local/tmp/OpenTest.csv"
 #define FW_RAWDATA_CSV_FILE "/data/local/tmp/FWMutualTest.csv"
@@ -1892,7 +1894,7 @@ int32_t nvt_mp_proc_init(void)
 				 * Ex. nvt_pid = 500A
 				 *     mpcriteria = "novatek-mp-criteria-500A"
 				 */
-				snprintf(mpcriteria, PAGE_SIZE, "novatek-mp-criteria-%04X", ts->nvt_pid);
+				snprintf(mpcriteria, PAGESIZE, "novatek-mp-criteria-%04X", ts->nvt_pid);
 
 				nvt_mp_parse_dt(np, mpcriteria);
 			} else {
