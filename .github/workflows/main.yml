@@ -1,0 +1,40 @@
+name: Build DarkOne
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: clone my kernel repo
+      run: |
+        git clone --depth 1 https://github.com/archie9211/android_kernel_motorola_chef
+        cd android_kernel_motorola_chef
+        pwd
+        ls
+    - name: Download Clang 9.0
+      run: |
+        cd android_kernel_motorola_chef
+        wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r365631c.tar.gz
+        mkdir clang
+        tar -C clang  -zxvf clang-r365631c.tar.gz
+        pwd
+        ls
+    - name: Clone linaro toolchain
+      run: |
+        cd android_kernel_motorola_chef
+        wget -q https://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu.tar.xz
+        tar  -Jxvf gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu.tar.xz
+        pwd
+        ls
+    - name: Now compiling kernel
+      run: |
+        cd android_kernel_motorola_chef
+        make ARCH=arm64 chef_defconfig O=out/
+        export KBUILD_COMPILER_STRING=$(../clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+        echo -e "Using toolchain $KBUILD_COMPILER_STRING"
+        make ARCH=arm64 -j$(nproc) O=out/ CC=clang/bin/clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
+        echo Add other actions to build,
+        echo test, and deploy your project.
