@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -951,7 +951,8 @@ static ssize_t mdss_dsi_cmd_write(struct file *file, const char __user *p,
 static int mdss_dsi_cmd_flush(struct file *file, fl_owner_t id)
 {
 	struct buf_data *pcmds = file->private_data;
-	int blen, len, i;
+	unsigned int len;
+	int blen, i;
 	char *buf, *bufp, *bp;
 	struct dsi_ctrl_hdr *dchdr;
 
@@ -994,7 +995,7 @@ static int mdss_dsi_cmd_flush(struct file *file, fl_owner_t id)
 	while (len >= sizeof(*dchdr)) {
 		dchdr = (struct dsi_ctrl_hdr *)bp;
 		dchdr->dlen = ntohs(dchdr->dlen);
-		if (dchdr->dlen > len || dchdr->dlen < 0) {
+		if (dchdr->dlen > (len - sizeof(*dchdr)) || dchdr->dlen < 0) {
 			pr_err("%s: dtsi cmd=%x error, len=%d\n",
 				__func__, dchdr->dtype, dchdr->dlen);
 			kfree(buf);
@@ -2413,6 +2414,49 @@ end_update:
 	return rc;
 }
 
+static int mdss_dsi_dynamic_bitclk_config(struct mdss_panel_data *pdata)
+{
+	int rc = 0;
+	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
+	struct mdss_panel_info *pinfo;
+
+	pr_debug("%s+:\n", __func__);
+
+	if (pdata == NULL) {
+		pr_err("%s: Invalid input data\n", __func__);
+		return -EINVAL;
+	}
+
+	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
+			panel_data);
+
+	if (!ctrl_pdata->panel_data.panel_info.dynamic_bitclk) {
+		pr_err("Dynamic bitclk not enabled for this panel\n");
+		return -EINVAL;
+	}
+
+	pinfo = &pdata->panel_info;
+
+	if (!pinfo->new_clk_rate || (pinfo->clk_rate == pinfo->new_clk_rate)) {
+		pr_debug("Bit clock update is not needed\n");
+		return 0;
+	}
+
+	rc = __mdss_dsi_dynamic_clock_switch(&ctrl_pdata->panel_data,
+		pinfo->new_clk_rate);
+	if (!rc && mdss_dsi_is_hw_config_split(ctrl_pdata->shared_data)) {
+		struct mdss_dsi_ctrl_pdata *octrl =
+			mdss_dsi_get_other_ctrl(ctrl_pdata);
+		rc = __mdss_dsi_dynamic_clock_switch(&octrl->panel_data,
+			pinfo->new_clk_rate);
+		if (rc)
+			pr_err("failed to switch DSI bitclk for sctrl\n");
+	} else if (rc) {
+		pr_err("failed to switch DSI bitclk\n");
+	}
+	return rc;
+}
+
 static int mdss_dsi_dfps_config(struct mdss_panel_data *pdata, int new_fps)
 {
 	int rc = 0;
@@ -2865,19 +2909,14 @@ static ssize_t dynamic_bitclk_sysfs_wta(struct device *dev,
 		return -EINVAL;
 	}
 
-	rc = __mdss_dsi_dynamic_clock_switch(&ctrl_pdata->panel_data,
-		clk_rate);
-	if (!rc && mdss_dsi_is_hw_config_split(ctrl_pdata->shared_data)) {
+	pinfo->new_clk_rate = clk_rate;
+	if (mdss_dsi_is_hw_config_split(ctrl_pdata->shared_data)) {
 		struct mdss_dsi_ctrl_pdata *octrl =
 			mdss_dsi_get_other_ctrl(ctrl_pdata);
-		rc = __mdss_dsi_dynamic_clock_switch(&octrl->panel_data,
-			clk_rate);
-		if (rc)
-			pr_err("failed to switch DSI bitclk for sctrl\n");
-	} else if (rc) {
-		pr_err("failed to switch DSI bitclk\n");
-	}
+		struct mdss_panel_info *opinfo = &octrl->panel_data.panel_info;
 
+		opinfo->new_clk_rate = clk_rate;
+	}
 	return count;
 } /* dynamic_bitclk_sysfs_wta */
 
@@ -3113,6 +3152,14 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 		break;
 	case MDSS_EVENT_AVR_MODE:
 		mdss_dsi_avr_config(ctrl_pdata, (int)(unsigned long) arg);
+		break;
+	case MDSS_EVENT_DSI_DYNAMIC_BITCLK:
+		if (ctrl_pdata->panel_data.panel_info.dynamic_bitclk) {
+			rc = mdss_dsi_dynamic_bitclk_config(pdata);
+			if (rc)
+				pr_err("unable to change bitclk error-%d\n",
+					rc);
+		}
 		break;
 	default:
 		pr_debug("%s: unhandled event=%d\n", __func__, event);

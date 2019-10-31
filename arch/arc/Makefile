@@ -12,7 +12,7 @@ ifeq ($(CROSS_COMPILE),)
 CROSS_COMPILE := arc-linux-
 endif
 
-KBUILD_DEFCONFIG := nsim_700_defconfig
+KBUILD_DEFCONFIG := nsim_hs_defconfig
 
 cflags-y	+= -fno-common -pipe -fno-builtin -mmedium-calls -D__linux__
 cflags-$(CONFIG_ISA_ARCOMPACT)	+= -mA7
@@ -71,10 +71,6 @@ ldflags-$(CONFIG_CPU_BIG_ENDIAN)	+= -EB
 # arc-linux-uclibc-ld (buildroot) or arceb-elf32-ld (EZChip) don't accept
 # --build-id w/o "-marclinux". Default arc-elf32-ld is OK
 ldflags-$(upto_gcc44)			+= -marclinux
-
-ifndef CONFIG_ARC_HAS_HW_MPY
-	cflags-y	+= -mno-mpy
-endif
 
 LIBGCC	:= $(shell $(CC) $(cflags-y) --print-libgcc-file-name)
 
