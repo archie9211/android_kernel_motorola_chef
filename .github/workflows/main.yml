@@ -9,12 +9,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Download Clang 9.0
-      run: |
+#     - name: Download Clang 9.0
+#       run: |
  
-        wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r365631c.tar.gz
-        mkdir clang
-        tar -C clang  -zxvf clang-r365631c.tar.gz
+#         wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r365631c.tar.gz
+#         mkdir clang
+#         tar -C clang  -zxvf clang-r365631c.tar.gz
     - name: Clone linaro toolchain
       run: |
         wget -q https://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu.tar.xz
@@ -22,6 +22,6 @@ jobs:
     - name: Now compiling kernel
       run: |
         make ARCH=arm64 chef_defconfig O=out/
-        export KBUILD_COMPILER_STRING=$(clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
-        echo -e "Using toolchain $KBUILD_COMPILER_STRING"
-        make ARCH=arm64 -j$(nproc) O=out/ CC=clang/bin/clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
+      #  export KBUILD_COMPILER_STRING=$(clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+       # echo -e "Using toolchain $KBUILD_COMPILER_STRING"
+        make ARCH=arm64 -j$(nproc) O=out/ CROSS_COMPILE=gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
