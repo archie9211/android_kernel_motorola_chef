@@ -36,8 +36,6 @@ jobs:
         cd /home/runner/work/android_kernel_motorola_chef/android_kernel_motorola_chef/android_kernel_motorola_chef 
         ls
         make ARCH=arm64 chef_defconfig O=out/
-        export KBUILD_COMPILER_STRING=$(../clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+        export KBUILD_COMPILER_STRING=$(clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
         echo -e "Using toolchain $KBUILD_COMPILER_STRING"
         make ARCH=arm64 -j$(nproc) O=out/ CC=clang/bin/clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
-        echo Add other actions to build,
-        echo test, and deploy your project.
