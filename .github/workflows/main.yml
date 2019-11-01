@@ -14,6 +14,7 @@ jobs:
       run: |
         wget -q https://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu.tar.xz
         tar  -Jxvf gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu.tar.xz
+        pwd
     - name: Now compiling kernel
       run: |
         make ARCH=arm64 chef_defconfig O=out/
