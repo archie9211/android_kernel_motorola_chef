@@ -17,5 +17,7 @@ jobs:
         pwd
     - name: Now compiling kernel
       run: |
+        export KBUILD_BUILD_USER="archie"
+        export KBUILD_BUILD_HOST="Hackintosh"
         make ARCH=arm64 chef_defconfig O=out/
         make ARCH=arm64 CROSS_COMPILE=/home/runner/work/android_kernel_motorola_chef/android_kernel_motorola_chef/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- -j$(nproc) O=out/ 
