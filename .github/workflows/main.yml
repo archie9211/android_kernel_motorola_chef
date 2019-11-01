@@ -12,11 +12,10 @@ jobs:
       run: |
         git clone --depth 1 https://github.com/archie9211/android_kernel_motorola_chef
         cd android_kernel_motorola_chef
-        pwd
-        ls
     - name: Download Clang 9.0
       run: |
-        cd android_kernel_motorola_chef
+        cd /home/runner/work/android_kernel_motorola_chef/android_kernel_motorola_chef/android_kernel_motorola_chef
+ 
         wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r365631c.tar.gz
         mkdir clang
         tar -C clang  -zxvf clang-r365631c.tar.gz
@@ -24,14 +23,18 @@ jobs:
         ls
     - name: Clone linaro toolchain
       run: |
-        cd android_kernel_motorola_chef
+        cd /home/runner/work/android_kernel_motorola_chef/android_kernel_motorola_chef/android_kernel_motorola_chef 
         wget -q https://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu.tar.xz
         tar  -Jxvf gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu.tar.xz
         pwd
         ls
+        cd gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu
+        pwd 
+        ls
     - name: Now compiling kernel
       run: |
-        cd android_kernel_motorola_chef
+        cd /home/runner/work/android_kernel_motorola_chef/android_kernel_motorola_chef/android_kernel_motorola_chef 
+        ls
         make ARCH=arm64 chef_defconfig O=out/
         export KBUILD_COMPILER_STRING=$(../clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
         echo -e "Using toolchain $KBUILD_COMPILER_STRING"
