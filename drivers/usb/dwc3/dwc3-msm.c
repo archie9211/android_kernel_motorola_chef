@@ -3111,6 +3111,8 @@ static int dwc3_msm_id_notifier(struct notifier_block *nb,
 	if (dwc->maximum_speed > dwc->max_hw_supp_speed)
 		dwc->maximum_speed = dwc->max_hw_supp_speed;
 
+	if (!id && mdwc->override_usb_speed) {
+		dwc->maximum_speed = mdwc->override_usb_speed;
 		dbg_event(0xFF, "override_usb_speed",
 				mdwc->override_usb_speed);
 		mdwc->override_usb_speed = 0;
