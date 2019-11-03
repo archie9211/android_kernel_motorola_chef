@@ -12,7 +12,9 @@ jobs:
 
     - name: Clone linaro toolchain
       run: |
-        git clone https://github.com/archie9211/linaro
+        git clone https://github.com/archie9211/linaro -b master linaro
+        git clone https://github.com/archie9211/linaro -b arm32 linaro32
+
         pwd
         ls
     - name: Now compiling kernel
@@ -20,7 +22,10 @@ jobs:
         export KBUILD_BUILD_USER="archie"
         export KBUILD_BUILD_HOST="Hackintosh"
         make ARCH=arm64 chef_defconfig O=out/
-        make ARCH=arm64 CROSS_COMPILE=/home/runner/work/android_kernel_motorola_chef/android_kernel_motorola_chef/linaro/bin/aarch64-linux-gnu- -j$(nproc) O=out/ 
+        make ARCH=arm64 \
+                CROS_COMPILE_ARM32=/home/runner/work/android_kernel_motorola_chef/android_kernel_motorola_chef/linaro32/bin/armv8l-linux-gnueabihf- \
+                CROSS_COMPILE=/home/runner/work/android_kernel_motorola_chef/android_kernel_motorola_chef/linaro/bin/aarch64-linux-gnu- \
+                -j$(nproc) O=out/ 
     - name: Make kernel zip
       run: |
         git clone https://github.com/archie9211/AnyKernel2 anykernel
