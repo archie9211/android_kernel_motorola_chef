@@ -1,0 +1,35 @@
+name: Build DarkOne
+
+on: [release]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Clone linaro toolchain
+      run: |
+        git clone https://github.com/archie9211/linaro
+        pwd
+        ls
+    - name: Now compiling kernel
+      run: |
+        export KBUILD_BUILD_USER="archie"
+        export KBUILD_BUILD_HOST="Hackintosh"
+        make ARCH=arm64 chef_defconfig O=out/
+        make ARCH=arm64 CROSS_COMPILE=/home/runner/work/android_kernel_motorola_chef/android_kernel_motorola_chef/linaro/bin/aarch64-linux-gnu- -j$(nproc) O=out/ 
+    - name: Make kernel zip
+      run: |
+        git clone https://github.com/archie9211/AnyKernel2 anykernel
+        cp out/arch/arm64/boot/Image.gz-dtb anykernel
+        cd anykernel
+        zip -r9 DarkOne-v3.0-chef *
+    - name: Upload to release
+      uses: JasonEtco/upload-to-release@master
+      with:
+        args: anykernel/DarkOne-v3.0-chef.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
