@@ -8,22 +8,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
-
-    - name: Clone linaro toolchain
+    - name: Clone kernel
       run: |
-        git clone https://github.com/archie9211/linaro
         pwd
         ls
-    - name: Now compiling kernel
+        git clone --depth 1 --no-single-branch https://github.com/archie9211/android_kernel_motorola_chef kernel
+        
+    - name: Lets Do it
       run: |
-        export KBUILD_BUILD_USER="archie"
-        export KBUILD_BUILD_HOST="Hackintosh"
-        make ARCH=arm64 chef_defconfig O=out/
-        make ARCH=arm64 CROSS_COMPILE=/home/runner/work/android_kernel_motorola_chef/android_kernel_motorola_chef/linaro/bin/aarch64-linux-gnu- -j$(nproc) O=out/ 
-    - name: Make kernel zip
-      run: |
-        git clone https://github.com/archie9211/AnyKernel2 anykernel
-        cp out/arch/arm64/boot/Image.gz-dtb anykernel
-        cd anykernel
-        zip -r9 DarkOne-v3.0-chef *
+        cd kernel
+        TOKEN=${{secrets.TG_BOT_TOKEN}}
+        CHTID=${{secrets.MY_CHAT_ID}}
+        wget https://gist.githubusercontent.com/archie9211/912c1a9a9552e1a709a68383a4c2fc1f/raw/ce69beb531f37023936fc7e5fccfb95a57dc9e7f/build-kernel-github-actions.sh
+        chmod a+x build-kernel-github-actions.sh 
+        sh build-kernel-github-actions.sh $TOKEN $CHTID
