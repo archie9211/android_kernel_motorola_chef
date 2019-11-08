@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -876,20 +876,15 @@ lim_get_ielen_from_bss_description(tpSirBssDescription pBssDescr)
 } /*** end lim_get_ielen_from_bss_description() ***/
 
 /**
- * lim_send_beacon_ind()
+ * lim_send_beacon_ind() - send the beacon indication
+ * @mac_ctx: pointer to mac structure
+ * @session: pe session
+ * @reason: beacon update reason
  *
- ***FUNCTION:
- * This function is called  to send the beacon indication
- * number being scanned.
- *
- ***PARAMS:
- *
- ***LOGIC:
- *
- ***ASSUMPTIONS:
+ * return: success: QDF_STATUS_SUCCESS failure: QDF_STATUS_E_FAILURE
  */
-
-void lim_send_beacon_ind(tpAniSirGlobal pMac, tpPESession psessionEntry);
+QDF_STATUS lim_send_beacon_ind(tpAniSirGlobal mac_ctx, tpPESession session,
+			       enum sir_bcn_update_reason reason);
 
 void
 lim_send_vdev_restart(tpAniSirGlobal pMac, tpPESession psessionEntry,
@@ -952,6 +947,15 @@ tSirRetStatus lim_process_sme_del_all_tdls_peers(tpAniSirGlobal p_mac,
 	return eSIR_SUCCESS;
 }
 #endif
+
+/**
+ * lim_send_bcn_rsp() - handle beacon send response
+ * @mac_ctx Pointer to Global MAC structure
+ * @rsp: beacon send response
+ *
+ * Return: None
+ */
+void lim_send_bcn_rsp(tpAniSirGlobal mac_ctx, tpSendbeaconParams rsp);
 
 /**
  * lim_process_rx_channel_status_event() - processes
@@ -1024,4 +1028,16 @@ void lim_process_assoc_failure_timeout(tpAniSirGlobal mac_ctx,
 void lim_send_mgmt_frame_tx(tpAniSirGlobal mac_ctx,
 		uint32_t *msg_buf);
 
+/**
+ * lim_p2p_check_oui_and_force_1x1() - Function to get P2P client device
+ * attributes from assoc request frame IE passed in.
+ * @mac_ctx: Pointer to mac_context
+ * @assoc_ie: Pointer to IE in association request
+ * @assoc_ie_len: Total association IE length
+ *
+ * Return: True if OUI is found. Else return false
+ *
+ */
+bool lim_p2p_check_oui_and_force_1x1(tpAniSirGlobal mac_ctx,
+				     uint8_t *assoc_ie, uint32_t assoc_ie_len);
 #endif /* __LIM_TYPES_H */
