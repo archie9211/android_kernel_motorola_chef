@@ -19,6 +19,6 @@ jobs:
         cd kernel
         TOKEN=${{secrets.TG_BOT_TOKEN}}
         CHTID=${{secrets.MY_CHAT_ID}}
-        wget https://gist.githubusercontent.com/archie9211/912c1a9a9552e1a709a68383a4c2fc1f/raw/aee108778524e0f8910dfd5d612013dcc0b22bf0/build-kernel-github-actions.sh 
+        wget https://gist.githubusercontent.com/archie9211/912c1a9a9552e1a709a68383a4c2fc1f/raw/f75d8f6d1d8d1447e4206c872b9db3873520e516/build-kernel-github-actions.sh 
         chmod a+x build-kernel-github-actions.sh 
         sh build-kernel-github-actions.sh $TOKEN $CHTID
