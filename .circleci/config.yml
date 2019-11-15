@@ -1,0 +1,19 @@
+version: 2.1
+jobs:
+  compile:
+   docker:
+      - image: ubuntu:18.04
+   steps:
+      - run:
+          command: |
+           apt-get -y update && apt-get -y upgrade && apt-get -y install bc build-essential zip curl libstdc++6 git wget python gcc clang libssl-dev
+           git clone --depth=1 https://github.com/archie9211/android_kernel_motorola_chef -b $CIRCLE_BRANCH
+           cd android_kernel_motorola_chef 
+           wget https://raw.githubusercontent.com/archie9211/dotfiles/master/build-github-actions-kernel.sh
+           source build-github-actions-kernel.sh chef clean PUSH
+workflows:
+  version: 2.1
+  cooking:
+    jobs:
+      - compile
+
