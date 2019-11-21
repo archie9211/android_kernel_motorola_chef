@@ -9,6 +9,7 @@
 enum alarmtimer_type {
 	ALARM_REALTIME,
 	ALARM_BOOTTIME,
+	ALARM_POWEROFF_REALTIME,
 
 	ALARM_NUMTYPE,
 };

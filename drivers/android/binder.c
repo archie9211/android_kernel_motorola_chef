@@ -4331,19 +4331,11 @@ retry:
 					ALIGN(t->buffer->data_size,
 					    sizeof(void *));
 
-<<<<<<< HEAD
-		tr.secctx = t->security_ctx;
-		if (t->security_ctx) {
-			cmd = BR_TRANSACTION_SEC_CTX;
-			trsize = sizeof(tr);
-		}
-=======
  		if (t->security_ctx) {
  			cmd = BR_TRANSACTION_SEC_CTX;
  			tr.secctx = t->security_ctx;
  			trsize = sizeof(tr);
  		}
->>>>>>> binder: create node flag to request sender's security context
 		if (put_user(cmd, (uint32_t __user *)ptr)) {
 			if (t_from)
 				binder_thread_dec_tmpref(t_from);

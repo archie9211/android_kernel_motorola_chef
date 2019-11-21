@@ -103,7 +103,6 @@ enum flat_binder_object_flags {
 	 * Only when set, causes senders to include their security
 	 * context
 	 */
-	FLAT_BINDER_FLAG_TXN_SECURITY_CTX = 0x1000,
 };
 
 #ifdef BINDER_IPC_32BIT
