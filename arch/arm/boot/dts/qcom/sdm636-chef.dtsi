@@ -28,7 +28,7 @@
 	android {
 		fstab {
 			vendor {
-				fsmgr_flags = "wait,slotselect,verify";
+				fsmgr_flags = "wait,slotselect";
 			};
 		};
 	};
