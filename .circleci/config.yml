@@ -1,0 +1,18 @@
+version: 2.1
+jobs:
+  compile:
+   docker:
+      - image: ubuntu:19.04
+   steps:
+      - run:
+          command: |
+           apt-get -y update && apt-get -y upgrade && apt-get -y install  gcc-aarch64-linux-gnu bc build-essential zip gcc clang libc6 curl libstdc++6 git wget libssl-dev zstd
+           git clone --depth=1 https://github.com/archie9211/android_kernel_motorola_chef -b $CIRCLE_BRANCH
+           cd android_kernel_motorola_chef 
+           wget https://raw.githubusercontent.com/archie9211/myscripts/master/kernel.sh
+           source kernel.sh 
+workflows:
+  version: 2.1
+  cooking:
+    jobs:
+      - compile
