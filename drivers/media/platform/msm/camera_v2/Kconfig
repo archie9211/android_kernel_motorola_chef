@@ -263,3 +263,10 @@ config MSM_CAMERA_VENDOR_BST_FACTORY
         bool "enable bst camera factory build"
         ---help---
                 enable bst factory build.
+
+config PATCH_GCAM_FREEZE
+	bool "Patch Front Gcam freeze"
+	default n
+	depends on MSM_CAMERA_SENSOR
+	---help---
+	  Enables for fix front Gcam freeze.
