@@ -421,7 +421,6 @@ struct msm_isp_pending_buf_info {
 	struct msm_isp_buffer *buf;
 	uint32_t frame_id;
 };
-
 struct msm_vfe_axi_stream {
 	uint32_t frame_id;
 	enum msm_vfe_axi_state state;
