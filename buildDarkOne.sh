@@ -97,7 +97,7 @@ function gen_zip {
     rm -rf *.zip
 	zip -r9 $ZIPNAME-$DEVICE-$DATE.zip * -x .git README.md	
 	MD5CHECK=$(md5sum $ZIPNAME-$DEVICE-$DATE.zip | cut -d' ' -f1)	
-	tg_post_build $ZIPNAME-$DEVICE-$DATE.zip "$CHATID" "Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s) | MD5 Checksum : <code>$MD5CHECK</code>"
+	tg_post_build $ZIPNAME-$DEVICE-$DATE.zip "$CHATID" "Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s) | MD5 Checksum : <code>$MD5CHECK</code> %0a<b>Branch : </b><code>$BRANCH</code>"
 	cd ..
 }
 
